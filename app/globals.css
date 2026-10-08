@@ -1,26 +1,84 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+:root, :root.dark {
+  --background: #0c0c0c;
+  --foreground: #e5e5e5;
+  --primary: #e8633e;
+  --primary-dark: #cf5530;
+  --surface: #151515;
+  --card: #1c1c1c;
+  --subtle: #222222;
+  --muted: #9ca3af;
+  --secondary: #d1d5db;
+  --hero-glow: none;
+}
+
+:root.light {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --primary: #0284c7;
+  --primary-dark: #0369a1;
+  --surface: #f1f5f9;
+  --card: #ffffff;
+  --subtle: #e2e8f0;
+  --muted: #64748b;
+  --secondary: #475569;
+  --hero-glow: radial-gradient(circle at 50% 0%, rgba(2, 132, 199, 0.08) 0%, transparent 60%);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-dark: var(--primary-dark);
+  --color-surface: var(--surface);
+  --color-card: var(--card);
+  --color-subtle: var(--subtle);
+  --color-muted: var(--muted);
+  --color-secondary: var(--secondary);
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Smooth theme transitions */
+*, *::before, *::after {
+  transition-property: background-color, border-color, color, box-shadow;
+  transition-duration: 200ms;
+  transition-timing-function: ease-in-out;
+}
+
+/* Custom scrollbar for workspace panels */
+.workspace-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.workspace-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.workspace-scroll::-webkit-scrollbar-thumb {
+  background: var(--subtle);
+  border-radius: 3px;
+}
+.workspace-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
 }
