@@ -6,12 +6,14 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "../components/auth/AuthProvider";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { login } = useAuth();
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,6 +22,7 @@ export default function LoginPage() {
     setIsLoading(true);
     // Simulate API call
     setTimeout(() => {
+      login({ name: "Alex User", email });
       setIsLoading(false);
       router.push("/dashboard");
     }, 1500);

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Rocket, Loader2, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { ThemeToggle } from "../ThemeToggle";
+import { AuthAwareBackButton } from "../auth/AuthAwareBackButton";
 
 export default function WorkspaceHeader() {
   const [isDeploying, setIsDeploying] = useState(false);
@@ -21,9 +22,11 @@ export default function WorkspaceHeader() {
   return (
     <header className="h-14 border-b border-subtle bg-background flex items-center justify-between px-4 shrink-0">
       <div className="flex items-center gap-4">
-        <Link href="/" className="font-bold text-foreground text-lg">
+        <AuthAwareBackButton />
+        <div className="w-px h-4 bg-subtle mx-1"></div>
+        <span className="font-bold text-foreground text-lg">
           Workspace
-        </Link>
+        </span>
       </div>
 
       <div className="flex items-center gap-4">

@@ -6,6 +6,7 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "../components/auth/AuthProvider";
 
 export default function RegisterPage() {
   const [name, setName] = useState("");
@@ -13,6 +14,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { login } = useAuth();
 
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,6 +22,7 @@ export default function RegisterPage() {
     
     setIsLoading(true);
     setTimeout(() => {
+      login({ name, email });
       setIsLoading(false);
       router.push("/dashboard");
     }, 1500);
