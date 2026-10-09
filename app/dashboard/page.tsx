@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ThemeToggle } from "../components/ThemeToggle";
 import { 
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid
@@ -22,21 +23,11 @@ import {
   LifeBuoy,
   LogOut,
   MoreHorizontal,
-  Bell
+  Bell,
+  Loader2
 } from "lucide-react";
-
-// Mock Data
-const MOCK_PROJECTS = [
-  { id: "1", name: "Portfolio Website", status: "Published", updated: "2 hours ago", type: "Frontend" },
-  { id: "2", name: "E-commerce Store", status: "Building", updated: "1 day ago", type: "Fullstack" },
-  { id: "3", name: "Developer Landing Page", status: "Draft", updated: "3 days ago", type: "Frontend" },
-];
-
-const MOCK_DEPLOYMENTS = [
-  { id: "1", project: "Portfolio Website", env: "Production", status: "Success", time: "2 hours ago" },
-  { id: "2", project: "Landing Page", env: "Production", status: "Success", time: "Yesterday" },
-  { id: "3", project: "E-commerce Store", env: "Preview", status: "Building", time: "5 minutes ago" },
-];
+import { useAuth } from "../components/auth/AuthProvider";
+import { createClient } from "@/lib/supabase/client";
 
 const PROJECT_STATS = [
   { name: 'Frontend', value: 2, color: '#0284c7' },
@@ -54,13 +45,74 @@ const DEPLOYMENT_STATS = [
   { name: 'Sun', count: 1 },
 ];
 
-import { useAuth } from "../components/auth/AuthProvider";
-
 export default function DashboardPage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("dashboard");
-  const { logout, user } = useAuth();
+  const { logout, user, isLoading: isAuthLoading } = useAuth();
+  const router = useRouter();
+  const supabase = createClient();
+
+  const [projects, setProjects] = useState<any[]>([]);
+  const [deployments, setDeployments] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [newProjectName, setNewProjectName] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
+
+  const loadProjects = async () => {
+    setIsLoading(true);
+    
+    const { data: projectsData, error: projectsError } = await supabase
+      .from('projects')
+      .select('*')
+      .order('updated_at', { ascending: false });
+      
+    if (!projectsError && projectsData) {
+      setProjects(projectsData);
+    }
+    
+    // For now deployments are just mock mapped, we'll fetch real ones if needed later
+    setDeployments([]);
+
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
+    if (user) {
+      loadProjects();
+    }
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleCreateProject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newProjectName.trim() || isCreating) return;
+    
+    setIsCreating(true);
+    
+    const { data, error } = await supabase
+      .from('projects')
+      .insert([
+        { 
+          name: newProjectName.trim(), 
+          description: "New AI Project",
+          user_id: user?.id 
+        }
+      ])
+      .select()
+      .single();
+      
+    setIsCreating(false);
+    
+    if (error) {
+      console.error(error);
+      alert("Failed to create project");
+    } else if (data) {
+      setIsCreateModalOpen(false);
+      router.push(`/workspace/${data.id}`);
+    }
+  };
 
   const navigation = [
     { name: "Dashboard", id: "dashboard", icon: LayoutDashboard },
@@ -68,6 +120,10 @@ export default function DashboardPage() {
     { name: "Deployments", id: "deployments", icon: Rocket },
     { name: "Resources", id: "resources", icon: BookOpen },
   ];
+
+  if (isAuthLoading) {
+    return <div className="flex h-screen items-center justify-center bg-background"><Loader2 className="animate-spin text-primary" /></div>;
+  }
 
   return (
     <div className="flex h-screen bg-surface">
@@ -142,13 +198,12 @@ export default function DashboardPage() {
               <div className="absolute bottom-full left-4 right-4 mb-2 bg-card border border-subtle rounded-xl shadow-lg z-50 overflow-hidden flex flex-col">
                 <div className="p-3 border-b border-subtle flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-foreground">{user?.name || "abashansari"}</p>
-                    <p className="text-xs text-muted">{user?.email || "ansariabash2004@gmail.com"}</p>
+                    <p className="text-sm font-medium text-foreground">{(user as any)?.user_metadata?.full_name || user?.name || user?.email}</p>
+                    <p className="text-xs text-muted">{user?.email}</p>
                   </div>
                 </div>
                 
                 <div className="p-2 space-y-1 border-b border-subtle">
-
                   <div className="w-full flex items-center justify-between px-2 py-1.5 text-sm text-secondary rounded-md">
                     <span>Theme</span>
                     <ThemeToggle />
@@ -157,32 +212,10 @@ export default function DashboardPage() {
                     <span>Home Page</span>
                     <Home size={16} className="text-muted" />
                   </Link>
-                  <button className="w-full flex items-center justify-between px-2 py-1.5 text-sm text-secondary hover:text-foreground hover:bg-surface rounded-md transition-colors">
-                    <span>Help</span>
-                    <LifeBuoy size={16} className="text-muted" />
-                  </button>
-                  <Link href="/resources" className="w-full flex items-center justify-between px-2 py-1.5 text-sm text-secondary hover:text-foreground hover:bg-surface rounded-md transition-colors">
-                    <span>Docs</span>
-                    <BookOpen size={16} className="text-muted" />
-                  </Link>
-                  <button 
-                    onClick={logout}
-                    className="w-full flex items-center justify-between px-2 py-1.5 text-sm text-secondary hover:text-foreground hover:bg-surface rounded-md transition-colors"
-                  >
+                  <button onClick={logout} className="w-full flex items-center justify-between px-2 py-1.5 text-sm text-secondary hover:text-foreground hover:bg-surface rounded-md transition-colors">
                     <span>Log Out</span>
                     <LogOut size={16} className="text-muted" />
                   </button>
-                </div>
-
-                <div className="p-2 border-b border-subtle">
-                  <Link href="/pricing" className="block w-full py-1.5 text-center text-sm font-medium text-foreground bg-surface border border-subtle hover:bg-subtle rounded-md transition-colors">
-                    Upgrade to Pro
-                  </Link>
-                </div>
-                
-                <div className="p-3 bg-surface/50 flex items-center justify-between">
-                  <span className="text-xs font-medium text-primary">All systems normal.</span>
-                  <div className="w-2 h-2 rounded-full bg-primary"></div>
                 </div>
               </div>
             </>
@@ -197,20 +230,8 @@ export default function DashboardPage() {
               <div className="w-8 h-8 rounded-full bg-surface border border-subtle flex items-center justify-center shrink-0">
                 <UserIcon size={16} className="text-muted" />
               </div>
-              <p className="text-sm font-medium text-foreground truncate">{user?.name || "abashansari"}</p>
+              <p className="text-sm font-medium text-foreground truncate">{(user as any)?.user_metadata?.full_name || user?.name || user?.email}</p>
             </button>
-            <div className="flex items-center gap-1">
-              <button 
-                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                className="p-1.5 text-muted hover:text-foreground hover:bg-surface rounded-md transition-colors"
-              >
-                <MoreHorizontal size={16} />
-              </button>
-              <button className="p-1.5 text-muted hover:text-foreground hover:bg-surface rounded-md transition-colors relative">
-                <Bell size={16} />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full border border-background"></span>
-              </button>
-            </div>
           </div>
         </div>
       </aside>
@@ -234,26 +255,26 @@ export default function DashboardPage() {
             {/* Header Section */}
             <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
               <div>
-                <h1 className="text-3xl font-bold text-foreground mb-2">Welcome back, Alex</h1>
+                <h1 className="text-3xl font-bold text-foreground mb-2">Welcome back, {((user as any)?.user_metadata?.full_name || user?.name || "there").split(' ')[0]}</h1>
                 <p className="text-muted text-lg">Build, manage, and deploy your websites from one place.</p>
               </div>
-              <Link 
-                href="/workspace"
+              <button 
+                onClick={() => setIsCreateModalOpen(true)}
                 className="inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm shrink-0"
               >
                 <Plus size={18} />
                 Create New Project
-              </Link>
+              </button>
             </header>
 
-            {/* Quick Actions (Optional, but good for UX) */}
+            {/* Quick Actions */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-               <Link href="/workspace" className="p-4 rounded-xl border border-subtle bg-card hover:border-primary/50 hover:shadow-sm transition-all group flex flex-col items-center text-center gap-2">
+               <button onClick={() => setIsCreateModalOpen(true)} className="p-4 rounded-xl border border-subtle bg-card hover:border-primary/50 hover:shadow-sm transition-all group flex flex-col items-center text-center gap-2">
                  <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center group-hover:scale-110 transition-transform">
                    <Plus size={20} />
                  </div>
                  <span className="text-sm font-medium text-foreground">New Site</span>
-               </Link>
+               </button>
                <button onClick={() => setActiveTab('projects')} className="p-4 rounded-xl border border-subtle bg-card hover:border-primary/50 hover:shadow-sm transition-all group flex flex-col items-center text-center gap-2">
                  <div className="w-10 h-10 rounded-full bg-surface text-secondary flex items-center justify-center group-hover:scale-110 transition-transform">
                    <FolderKanban size={20} />
@@ -276,12 +297,11 @@ export default function DashboardPage() {
 
             {/* Analytics & Summary Section */}
             <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Summary Cards */}
               <div className="flex flex-col gap-4">
                 <div className="bg-card border border-subtle rounded-xl p-5 shadow-sm flex items-center justify-between h-full">
                   <div>
                     <p className="text-sm font-medium text-muted mb-1">Total Projects</p>
-                    <p className="text-3xl font-bold text-foreground">{MOCK_PROJECTS.length}</p>
+                    <p className="text-3xl font-bold text-foreground">{isLoading ? "-" : projects.length}</p>
                   </div>
                   <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
                     <FolderKanban size={24} className="text-primary" />
@@ -290,7 +310,7 @@ export default function DashboardPage() {
                 <div className="bg-card border border-subtle rounded-xl p-5 shadow-sm flex items-center justify-between h-full">
                   <div>
                     <p className="text-sm font-medium text-muted mb-1">Total Deployments</p>
-                    <p className="text-3xl font-bold text-foreground">12</p>
+                    <p className="text-3xl font-bold text-foreground">{isLoading ? "-" : deployments.length}</p>
                   </div>
                   <div className="w-12 h-12 bg-emerald-500/10 rounded-full flex items-center justify-center">
                     <Rocket size={24} className="text-emerald-500" />
@@ -359,13 +379,15 @@ export default function DashboardPage() {
             {/* Projects Section */}
             <section>
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-foreground">Recent Projects</h2>
+                <h2 className="text-xl font-bold text-foreground">Your Projects</h2>
                 <button onClick={() => setActiveTab('projects')} className="text-sm text-primary hover:underline font-medium">View all</button>
               </div>
 
-              {MOCK_PROJECTS.length > 0 ? (
+              {isLoading ? (
+                <div className="flex justify-center py-12"><Loader2 className="animate-spin text-primary" /></div>
+              ) : projects.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {MOCK_PROJECTS.map((project) => (
+                  {projects.map((project) => (
                     <div key={project.id} className="bg-card border border-subtle rounded-xl p-5 hover:shadow-md hover:border-subtle transition-all group flex flex-col">
                       <div className="flex items-start justify-between mb-4">
                         <div className="w-10 h-10 rounded-lg bg-surface flex items-center justify-center border border-subtle group-hover:bg-primary/5 transition-colors">
@@ -374,18 +396,18 @@ export default function DashboardPage() {
                         <button className="text-muted hover:text-foreground p-1"><MoreVertical size={16} /></button>
                       </div>
                       <h3 className="font-bold text-foreground text-lg mb-1">{project.name}</h3>
-                      <p className="text-xs text-muted mb-6 flex-1">{project.type}</p>
+                      <p className="text-xs text-muted mb-6 flex-1">{project.description}</p>
                       
                       <div className="flex items-center justify-between pt-4 border-t border-subtle">
                         <div className="flex items-center gap-2">
                           <div className={`w-2 h-2 rounded-full ${project.status === 'Published' ? 'bg-emerald-500' : project.status === 'Building' ? 'bg-yellow-500' : 'bg-gray-400'}`}></div>
                           <span className="text-xs font-medium text-secondary">{project.status}</span>
                         </div>
-                        <span className="text-xs text-muted flex items-center gap-1"><Clock size={12}/> {project.updated}</span>
+                        <span className="text-xs text-muted flex items-center gap-1"><Clock size={12}/> {new Date(project.updated_at).toLocaleDateString()}</span>
                       </div>
 
                       <div className="mt-4 pt-4 border-t border-subtle">
-                         <Link href="/workspace" className="block w-full py-2 text-center text-sm font-medium text-primary hover:bg-primary/5 rounded-md transition-colors">
+                         <Link href={`/workspace/${project.id}`} className="block w-full py-2 text-center text-sm font-medium text-primary hover:bg-primary/5 rounded-md transition-colors">
                            Open Workspace
                          </Link>
                       </div>
@@ -397,51 +419,60 @@ export default function DashboardPage() {
                    <div className="w-16 h-16 bg-surface rounded-full flex items-center justify-center mb-4 text-muted">
                      <FolderKanban size={32} />
                    </div>
-                   <h3 className="text-lg font-bold text-foreground mb-2">Create your first website</h3>
-                   <p className="text-muted text-sm max-w-sm mb-6">Describe what you want to build and let AI create the foundation for you.</p>
-                   <Link href="/workspace" className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors">
+                   <h3 className="text-lg font-bold text-foreground mb-2">Create your first project</h3>
+                   <p className="text-muted text-sm max-w-sm mb-6">Create a project to start building websites with AI.</p>
+                   <button onClick={() => setIsCreateModalOpen(true)} className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors">
                      <Plus size={18} />
                      Create New Project
-                   </Link>
+                   </button>
                 </div>
               )}
             </section>
-
-            {/* Deployments Overview */}
-            <section>
-              <h2 className="text-xl font-bold text-foreground mb-6">Recent Deployments</h2>
-              <div className="bg-card border border-subtle rounded-xl overflow-hidden">
-                <div className="divide-y divide-subtle">
-                  {MOCK_DEPLOYMENTS.map((deploy) => (
-                    <div key={deploy.id} className="p-4 sm:p-5 flex items-center justify-between hover:bg-surface/50 transition-colors">
-                      <div className="flex items-center gap-4">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                          deploy.status === 'Success' ? 'bg-emerald-500/10 text-emerald-500' : 
-                          deploy.status === 'Building' ? 'bg-yellow-500/10 text-yellow-500' : 
-                          'bg-red-500/10 text-red-500'
-                        }`}>
-                           <Rocket size={16} />
-                        </div>
-                        <div>
-                          <p className="text-sm font-bold text-foreground">{deploy.project}</p>
-                          <div className="flex items-center gap-2 mt-1">
-                             <span className="text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-surface border border-subtle text-secondary">{deploy.env}</span>
-                             <span className="text-xs text-muted flex items-center gap-1"><Clock size={12}/> {deploy.time}</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div>
-                        <Link href="/workspace" className="text-sm font-medium text-primary hover:underline">View</Link>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </section>
-
           </div>
         </div>
       </main>
+
+      {/* Create Project Modal */}
+      {isCreateModalOpen && (
+        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4">
+          <div className="bg-card border border-subtle rounded-2xl p-6 shadow-xl w-full max-w-md">
+            <h2 className="text-xl font-bold text-foreground mb-2">Create New Project</h2>
+            <p className="text-sm text-muted mb-6">Give your new website project a name to get started.</p>
+            
+            <form onSubmit={handleCreateProject}>
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-foreground mb-2">Project Name</label>
+                <input 
+                  type="text" 
+                  value={newProjectName}
+                  onChange={(e) => setNewProjectName(e.target.value)}
+                  placeholder="e.g., Coffee Shop Website"
+                  className="w-full bg-surface border border-subtle rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  autoFocus
+                  required
+                />
+              </div>
+              <div className="flex justify-end gap-3">
+                <button 
+                  type="button" 
+                  onClick={() => setIsCreateModalOpen(false)}
+                  className="px-4 py-2 text-sm font-medium text-muted hover:text-foreground transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={!newProjectName.trim() || isCreating}
+                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors disabled:opacity-70"
+                >
+                  {isCreating ? <Loader2 size={16} className="animate-spin"/> : null}
+                  Create Project
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

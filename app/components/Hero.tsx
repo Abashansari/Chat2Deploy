@@ -24,7 +24,7 @@ export default function Hero() {
 
         {/* CTA */}
         <Link
-          href="/workspace"
+          href="/dashboard"
           className="inline-flex items-center justify-center px-7 py-3 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors"
         >
           Get Started &rarr;

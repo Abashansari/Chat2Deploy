@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { ArrowUp, Loader2, CheckCircle2, Sparkles, AlertCircle } from "lucide-react";
-import type { ChatMessage, GenerationStatus } from "../../workspace/page";
+import type { ChatMessage, GenerationStatus } from "./types";
 
 type ChatPanelProps = {
   messages: ChatMessage[];

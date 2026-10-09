@@ -1,4 +1,8 @@
--- Create profiles table
+-- Complete Supabase Schema Setup for Chat2Deploy
+-- This script contains all necessary tables, policies, and triggers.
+-- Run this in your Supabase SQL Editor to resolve missing table errors.
+
+-- 1. Create profiles table
 CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   full_name TEXT NOT NULL,
@@ -7,10 +11,8 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Enable RLS on profiles
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
--- Profiles Policies
 CREATE POLICY "Users can read their own profile."
   ON public.profiles FOR SELECT
   USING (auth.uid() = id);
@@ -23,7 +25,7 @@ CREATE POLICY "Users can insert their own profile."
   ON public.profiles FOR INSERT
   WITH CHECK (auth.uid() = id);
 
--- Create projects table
+-- 2. Create projects table
 CREATE TABLE IF NOT EXISTS public.projects (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -34,10 +36,8 @@ CREATE TABLE IF NOT EXISTS public.projects (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Enable RLS on projects
 ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
 
--- Projects Policies
 CREATE POLICY "Users can read their own projects."
   ON public.projects FOR SELECT
   USING (auth.uid() = user_id);
@@ -54,51 +54,73 @@ CREATE POLICY "Users can delete their own projects."
   ON public.projects FOR DELETE
   USING (auth.uid() = user_id);
 
--- Create project_versions table
-CREATE TABLE IF NOT EXISTS public.project_versions (
+-- 3. Create project_files table (for workspace code)
+CREATE TABLE IF NOT EXISTS public.project_files (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   project_id UUID NOT NULL REFERENCES public.projects(id) ON DELETE CASCADE,
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  version_number INTEGER NOT NULL,
-  description TEXT,
+  file_path TEXT NOT NULL,
+  content TEXT NOT NULL,
+  file_type TEXT NOT NULL,
+  version INTEGER DEFAULT 1,
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(project_id, file_path)
+);
+
+ALTER TABLE public.project_files ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can manage files for their own projects"
+  ON public.project_files
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.projects
+      WHERE projects.id = project_files.project_id
+      AND projects.user_id = auth.uid()
+    )
+  );
+
+-- 4. Create chat_history table
+CREATE TABLE IF NOT EXISTS public.chat_history (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  project_id UUID NOT NULL REFERENCES public.projects(id) ON DELETE CASCADE,
+  role TEXT NOT NULL CHECK (role IN ('user', 'assistant')),
+  content TEXT NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Enable RLS on project_versions
-ALTER TABLE public.project_versions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.chat_history ENABLE ROW LEVEL SECURITY;
 
--- Project Versions Policies
-CREATE POLICY "Users can read their own project versions."
-  ON public.project_versions FOR SELECT
-  USING (auth.uid() = user_id);
+CREATE POLICY "Users can manage chat history for their own projects"
+  ON public.chat_history
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.projects
+      WHERE projects.id = chat_history.project_id
+      AND projects.user_id = auth.uid()
+    )
+  );
 
-CREATE POLICY "Users can insert their own project versions."
-  ON public.project_versions FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
-
--- Create deployments table
-CREATE TABLE IF NOT EXISTS public.deployments (
+-- 5. Create generation_history table
+CREATE TABLE IF NOT EXISTS public.generation_history (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   project_id UUID NOT NULL REFERENCES public.projects(id) ON DELETE CASCADE,
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  deployment_status TEXT NOT NULL,
-  deployment_url TEXT,
+  status TEXT NOT NULL,
+  error_message TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Enable RLS on deployments
-ALTER TABLE public.deployments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.generation_history ENABLE ROW LEVEL SECURITY;
 
--- Deployments Policies
-CREATE POLICY "Users can read their own deployments."
-  ON public.deployments FOR SELECT
-  USING (auth.uid() = user_id);
+CREATE POLICY "Users can manage generation history for their own projects"
+  ON public.generation_history
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.projects
+      WHERE projects.id = generation_history.project_id
+      AND projects.user_id = auth.uid()
+    )
+  );
 
-CREATE POLICY "Users can insert their own deployments."
-  ON public.deployments FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
-
--- Create trigger for handling updated_at on profiles
+-- 6. Updated_at Function and Triggers
 CREATE OR REPLACE FUNCTION public.handle_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -106,6 +128,11 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
+-- Drop triggers if they exist to avoid errors on multiple runs
+DROP TRIGGER IF EXISTS profiles_updated_at ON public.profiles;
+DROP TRIGGER IF EXISTS projects_updated_at ON public.projects;
+DROP TRIGGER IF EXISTS project_files_updated_at ON public.project_files;
 
 CREATE TRIGGER profiles_updated_at
 BEFORE UPDATE ON public.profiles
@@ -117,7 +144,12 @@ BEFORE UPDATE ON public.projects
 FOR EACH ROW
 EXECUTE FUNCTION public.handle_updated_at();
 
--- Trigger to automatically create a profile for a new user
+CREATE TRIGGER project_files_updated_at
+BEFORE UPDATE ON public.project_files
+FOR EACH ROW
+EXECUTE FUNCTION public.handle_updated_at();
+
+-- 7. New User Trigger
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -131,7 +163,12 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+
 CREATE TRIGGER on_auth_user_created
 AFTER INSERT ON auth.users
 FOR EACH ROW
 EXECUTE FUNCTION public.handle_new_user();
+
+-- Notify PostgREST to reload the schema cache
+NOTIFY pgrst, 'reload schema';

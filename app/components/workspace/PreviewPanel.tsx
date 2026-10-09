@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback } from "react";
 import { RefreshCw, Monitor, Tablet, Smartphone, Maximize2, Minimize2, Loader2, Sparkles, AlertCircle } from "lucide-react";
-import type { GenerationStatus } from "../../workspace/page";
+import type { GenerationStatus } from "./types";
 
 type PreviewPanelProps = {
   device: "Desktop" | "Tablet" | "Mobile";
