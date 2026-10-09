@@ -6,27 +6,69 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "../components/auth/AuthProvider";
+import { createClient } from "@/lib/supabase/client";
 
 export default function RegisterPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
   const router = useRouter();
-  const { login } = useAuth();
+  const supabase = createClient();
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !email || !password) return;
     
     setIsLoading(true);
-    setTimeout(() => {
-      login({ name, email });
+    setError(null);
+    
+    const { data, error: signUpError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: name,
+        },
+        emailRedirectTo: `${location.origin}/auth/callback`,
+      }
+    });
+
+    if (signUpError) {
+      setError(signUpError.message);
       setIsLoading(false);
+      return;
+    }
+
+    if (data.session) {
       router.push("/dashboard");
-    }, 1500);
+      router.refresh();
+    } else {
+      setSuccess(true);
+    }
+    
+    setIsLoading(false);
   };
+
+  if (success) {
+    return (
+      <>
+        <Navbar />
+        <main className="flex-1 flex flex-col items-center justify-center min-h-[calc(100vh-64px)] bg-background p-4">
+          <div className="w-full max-w-md bg-card border border-subtle rounded-2xl p-8 shadow-sm text-center">
+            <h1 className="text-2xl font-bold text-foreground mb-4">Check your email</h1>
+            <p className="text-sm text-muted mb-6">We&apos;ve sent a verification link to {email}. Please verify your email to continue.</p>
+            <Link href="/login" className="inline-flex items-center justify-center py-2.5 px-4 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors">
+              Return to Login
+            </Link>
+          </div>
+        </main>
+        <Footer />
+      </>
+    );
+  }
 
   return (
     <>
@@ -39,6 +81,11 @@ export default function RegisterPage() {
           </div>
           
           <form onSubmit={handleRegister} className="space-y-4">
+            {error && (
+              <div className="p-3 bg-red-500/10 border border-red-500/50 rounded-lg text-sm text-red-500 text-center">
+                {error}
+              </div>
+            )}
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground block">Name</label>
               <input 

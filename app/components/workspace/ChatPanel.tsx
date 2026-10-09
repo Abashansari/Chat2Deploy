@@ -1,60 +1,19 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { ArrowUp, Bot, User, CheckCircle2, Loader2, Sparkles } from "lucide-react";
+import { ArrowUp, Loader2, CheckCircle2, Sparkles, AlertCircle } from "lucide-react";
+import type { ChatMessage, GenerationStatus } from "../../workspace/page";
 
-type Message = {
-  id: string;
-  role: "user" | "assistant";
-  content: string | React.ReactNode;
+type ChatPanelProps = {
+  messages: ChatMessage[];
+  generationStatus: GenerationStatus;
+  onGenerate: (prompt: string) => void;
 };
 
-export default function ChatPanel() {
+export default function ChatPanel({ messages, generationStatus, onGenerate }: ChatPanelProps) {
   const [input, setInput] = useState("");
-  const [isGenerating, setIsGenerating] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      role: "user",
-      content: "Create a modern portfolio website with a hero section, projects, skills and contact form."
-    },
-    {
-      id: "2",
-      role: "assistant",
-      content: (
-        <div className="space-y-3 text-sm">
-          <p className="font-medium text-foreground">I'll build your portfolio with:</p>
-          <ul className="space-y-1 text-muted">
-            <li className="flex items-center gap-2"><CheckCircle2 size={14} className="text-emerald-500" /> Hero section</li>
-            <li className="flex items-center gap-2"><CheckCircle2 size={14} className="text-emerald-500" /> Projects section</li>
-            <li className="flex items-center gap-2"><CheckCircle2 size={14} className="text-emerald-500" /> Skills section</li>
-            <li className="flex items-center gap-2"><CheckCircle2 size={14} className="text-emerald-500" /> Contact form</li>
-            <li className="flex items-center gap-2"><CheckCircle2 size={14} className="text-emerald-500" /> Responsive layout</li>
-          </ul>
-          <p className="text-muted text-xs pt-2 border-t border-subtle">Creating the required components...</p>
-        </div>
-      )
-    },
-    {
-      id: "3",
-      role: "assistant",
-      content: (
-        <div className="space-y-2 text-sm text-muted font-mono bg-surface p-3 rounded-md border border-subtle">
-          <div className="flex items-center gap-2"><Sparkles size={12} className="text-primary" /> Creating project</div>
-          <div className="flex items-center gap-2"><CheckCircle2 size={12} className="text-emerald-500" /> Generated page</div>
-          <div className="flex items-center gap-2"><CheckCircle2 size={12} className="text-emerald-500" /> Created components</div>
-          <div className="flex items-center gap-2"><Sparkles size={12} className="text-primary" /> Building preview...</div>
-        </div>
-      )
-    },
-    {
-      id: "4",
-      role: "user",
-      content: "Make the hero section smaller and change the button color."
-    }
-  ]);
+  const isGenerating = generationStatus === "generating" || generationStatus === "rendering";
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -62,70 +21,110 @@ export default function ChatPanel() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, isGenerating]);
+  }, [messages, generationStatus]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isGenerating) return;
 
-    const userMsg = input;
+    const prompt = input.trim();
     setInput("");
-    
-    setMessages(prev => [...prev, { id: Date.now().toString(), role: "user", content: userMsg }]);
-    setIsGenerating(true);
+    onGenerate(prompt);
+  };
 
-    // Simulate AI response
-    setTimeout(() => {
-      setMessages(prev => [...prev, {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: (
-          <div className="space-y-2 text-sm text-muted font-mono bg-surface p-3 rounded-md border border-subtle">
-            <div className="flex items-center gap-2"><Loader2 size={12} className="text-primary animate-spin" /> Analyzing request...</div>
-          </div>
-        )
-      }]);
+  const getStatusIcon = (status?: GenerationStatus) => {
+    switch (status) {
+      case "generating":
+        return <Loader2 size={12} className="text-primary animate-spin" />;
+      case "rendering":
+        return <Sparkles size={12} className="text-primary animate-pulse" />;
+      case "ready":
+        return <CheckCircle2 size={12} className="text-emerald-500" />;
+      case "error":
+        return <AlertCircle size={12} className="text-red-500" />;
+      default:
+        return null;
+    }
+  };
 
-      setTimeout(() => {
-        setMessages(prev => {
-          const newMsgs = [...prev];
-          newMsgs[newMsgs.length - 1] = {
-            id: (Date.now() + 2).toString(),
-            role: "assistant",
-            content: (
-              <div className="space-y-3 text-sm">
-                <p className="text-foreground">I've updated the website based on your request.</p>
-                <div className="space-y-1 text-muted font-mono bg-surface p-2 rounded-md border border-subtle">
-                  <div className="flex items-center gap-2"><CheckCircle2 size={12} className="text-emerald-500" /> Changes applied successfully</div>
-                </div>
-              </div>
-            )
-          };
-          return newMsgs;
-        });
-        setIsGenerating(false);
-      }, 1500);
-    }, 500);
+  const getStatusLabel = (status?: GenerationStatus) => {
+    switch (status) {
+      case "generating":
+        return "Generating website...";
+      case "rendering":
+        return "Preparing preview...";
+      case "ready":
+        return "Preview ready";
+      case "error":
+        return "Generation failed";
+      default:
+        return "";
+    }
   };
 
   return (
     <div className="flex flex-col h-full bg-background relative">
       <div className="h-12 border-b border-subtle flex items-center px-4 shrink-0 justify-between">
         <span className="text-xs font-semibold text-muted uppercase tracking-wider">AI Chat</span>
-        <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+        <div className={`w-2 h-2 rounded-full ${isGenerating ? "bg-yellow-500 animate-pulse" : "bg-emerald-500"}`}></div>
       </div>
-      
+
       <div className="flex-1 overflow-y-auto p-4 space-y-6 workspace-scroll">
+        {messages.length === 0 && (
+          <div className="flex flex-col items-center justify-center h-full text-center px-6">
+            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+              <Sparkles size={24} className="text-primary" />
+            </div>
+            <h3 className="text-lg font-bold text-foreground mb-2">What would you like to build?</h3>
+            <p className="text-sm text-muted max-w-xs">
+              Describe the website you want and Chat2Deploy will generate it for you.
+            </p>
+            <div className="mt-6 space-y-2 w-full max-w-xs">
+              {[
+                "Create a modern portfolio website",
+                "Build an e-commerce landing page",
+                "Design a restaurant website with a menu",
+              ].map((suggestion) => (
+                <button
+                  key={suggestion}
+                  onClick={() => {
+                    setInput(suggestion);
+                  }}
+                  className="w-full text-left text-xs text-muted bg-surface border border-subtle rounded-lg px-3 py-2.5 hover:border-primary/50 hover:text-foreground transition-all"
+                >
+                  &quot;{suggestion}&quot;
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {messages.map((msg) => (
           <div key={msg.id} className="space-y-2">
             <div className="text-[10px] font-semibold text-muted uppercase tracking-wider flex items-center gap-1.5">
               {msg.role === "user" ? "You" : "Chat2Deploy"}
             </div>
-            <div className={`p-3 rounded-lg border ${msg.role === "user" ? "bg-surface border-subtle" : "bg-transparent border-transparent px-0"}`}>
+            <div
+              className={`p-3 rounded-lg border ${
+                msg.role === "user"
+                  ? "bg-surface border-subtle"
+                  : "bg-transparent border-transparent px-0"
+              }`}
+            >
               {msg.role === "user" ? (
                 <p className="text-sm text-foreground">{msg.content}</p>
               ) : (
-                msg.content
+                <div className="space-y-2 text-sm">
+                  {msg.status && (
+                    <div className="flex items-center gap-2 font-mono text-muted bg-surface p-2.5 rounded-md border border-subtle">
+                      {getStatusIcon(msg.status)}
+                      <span className="text-xs">{msg.status === "ready" || msg.status === "error" ? msg.content : getStatusLabel(msg.status)}</span>
+                    </div>
+                  )}
+                  {!msg.status && (
+                    <p className="text-foreground">{msg.content}</p>
+                  )}
+                </div>
               )}
             </div>
           </div>

@@ -18,15 +18,11 @@ import {
   Menu,
   X,
   User as UserIcon,
-  MessageSquarePlus,
   Home,
-  Edit3,
   LifeBuoy,
   LogOut,
   MoreHorizontal,
-  Bell,
-  Sun,
-  Moon
+  Bell
 } from "lucide-react";
 
 // Mock Data

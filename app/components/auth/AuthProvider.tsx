@@ -2,8 +2,10 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 
 interface User {
+  id: string;
   name: string;
   email: string;
 }
@@ -12,8 +14,8 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (userData: User) => void;
-  logout: () => void;
+  login: (userData: { name: string; email: string }) => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -23,25 +25,63 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
+  const supabase = createClient();
 
   useEffect(() => {
-    // Check localStorage on mount
-    const storedUser = localStorage.getItem("chat2deploy_user");
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (e) {
-        console.error("Failed to parse stored user", e);
-      }
-    }
-    setIsLoading(false);
-  }, []);
+    const fetchUser = async () => {
+      setIsLoading(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user) {
+        // Fetch profile
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', session.user.id)
+          .single();
 
-  // Route protection
+        setUser({
+          id: session.user.id,
+          name: profile?.full_name || session.user.email || '',
+          email: session.user.email || '',
+        });
+      } else {
+        setUser(null);
+      }
+      setIsLoading(false);
+    };
+
+    fetchUser();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', session.user.id)
+          .single();
+
+        setUser({
+          id: session.user.id,
+          name: profile?.full_name || session.user.email || '',
+          email: session.user.email || '',
+        });
+      } else {
+        setUser(null);
+      }
+      setIsLoading(false);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [supabase]);
+
+  // Route protection is handled by Next.js middleware, but keeping basic client check for UX
   useEffect(() => {
     if (isLoading) return;
 
-    const protectedRoutes = ["/dashboard"];
+    const protectedRoutes = ["/dashboard", "/workspace"];
     const isProtectedRoute = protectedRoutes.some(route => pathname?.startsWith(route));
 
     if (isProtectedRoute && !user) {
@@ -49,14 +89,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [user, isLoading, pathname, router]);
 
-  const login = (userData: User) => {
-    setUser(userData);
-    localStorage.setItem("chat2deploy_user", JSON.stringify(userData));
+  const login = (userData: { name: string; email: string }) => {
+    // This is kept for compatibility with existing UI that might call login() immediately.
+    // In real app, the onAuthStateChange will trigger.
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem("chat2deploy_user");
+  const logout = async () => {
+    await supabase.auth.signOut();
     router.push("/");
   };
 
