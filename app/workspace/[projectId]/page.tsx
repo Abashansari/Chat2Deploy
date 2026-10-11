@@ -8,7 +8,7 @@ import PreviewPanel from "../../components/workspace/PreviewPanel";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "../../components/auth/AuthProvider";
 import { Loader2 } from "lucide-react";
-import type { ChatMessage, GenerationStatus } from "../../components/workspace/types";
+import type { ChatMessage, GenerationStatus, DeploymentStatus, DeploymentDetails } from "../../components/workspace/types";
 
 export default function WorkspacePage({ params }: { params: Promise<{ projectId: string }> }) {
   const resolvedParams = use(params);
@@ -23,6 +23,9 @@ export default function WorkspacePage({ params }: { params: Promise<{ projectId:
   const [hasFiles, setHasFiles] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [generationStatus, setGenerationStatus] = useState<GenerationStatus>("idle");
+  const [deploymentStatus, setDeploymentStatus] = useState<DeploymentStatus>("idle");
+  const [deploymentDetails, setDeploymentDetails] = useState<DeploymentDetails | null>(null);
+  const [deploymentError, setDeploymentError] = useState<string | null>(null);
   const [projectTitle, setProjectTitle] = useState<string>("Loading Project...");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const requestIdRef = useRef(0);
@@ -163,6 +166,43 @@ export default function WorkspacePage({ params }: { params: Promise<{ projectId:
     }
   }, [projectId]);
 
+  const handleDeploy = useCallback(async () => {
+    if (!projectId || !hasFiles) return;
+
+    setDeploymentStatus("deploying");
+    setDeploymentError(null);
+
+    try {
+      const res = await fetch("/api/deploy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectId }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Deployment failed.");
+      }
+
+      setDeploymentDetails({
+        url: data.deploymentUrl,
+        id: data.deploymentId,
+        timestamp: data.timestamp,
+      });
+      setDeploymentStatus("success");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Deployment failed.";
+      setDeploymentError(msg);
+      setDeploymentStatus("error");
+    }
+  }, [projectId, hasFiles]);
+
+  const handleDismissDeployment = useCallback(() => {
+    setDeploymentStatus("idle");
+    setDeploymentError(null);
+  }, []);
+
   if (isInitializing) {
     return (
       <div className="flex h-screen items-center justify-center bg-background flex-col gap-4">
@@ -185,6 +225,10 @@ export default function WorkspacePage({ params }: { params: Promise<{ projectId:
           hasFiles={hasFiles}
           generationStatus={generationStatus}
           projectTitle={projectTitle}
+          deploymentStatus={deploymentStatus}
+          deploymentDetails={deploymentDetails}
+          deploymentError={deploymentError}
+          onDismissDeployment={handleDismissDeployment}
         />
       </div>
     );
@@ -192,7 +236,13 @@ export default function WorkspacePage({ params }: { params: Promise<{ projectId:
 
   return (
     <div className="flex flex-col h-screen bg-background overflow-hidden">
-      <WorkspaceHeader projectId={projectId} hasFiles={hasFiles} />
+      <WorkspaceHeader
+        projectId={projectId}
+        hasFiles={hasFiles}
+        deploymentStatus={deploymentStatus}
+        deploymentDetails={deploymentDetails}
+        onDeploy={handleDeploy}
+      />
       <div className="flex flex-1 overflow-hidden">
         {/* Left Pane - Chat */}
         <div className="w-full md:w-[400px] lg:w-[450px] border-r border-subtle flex flex-col bg-background shrink-0 transition-all duration-300">
@@ -215,6 +265,10 @@ export default function WorkspacePage({ params }: { params: Promise<{ projectId:
             hasFiles={hasFiles}
             generationStatus={generationStatus}
             projectTitle={projectTitle}
+            deploymentStatus={deploymentStatus}
+            deploymentDetails={deploymentDetails}
+            deploymentError={deploymentError}
+            onDismissDeployment={handleDismissDeployment}
           />
         </div>
       </div>

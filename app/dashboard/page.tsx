@@ -415,7 +415,7 @@ export default function DashboardPage() {
                              target="_blank"
                              rel="noopener noreferrer"
                              className="p-2 text-muted hover:text-emerald-500 hover:bg-surface rounded-md transition-colors"
-                             title="Open live site on Cloudflare Pages"
+                             title="Open live website"
                            >
                              <Globe size={18} />
                            </a>
