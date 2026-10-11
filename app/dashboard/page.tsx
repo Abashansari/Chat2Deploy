@@ -71,10 +71,9 @@ export default function DashboardPage() {
       
     if (!projectsError && projectsData) {
       setProjects(projectsData);
+      const published = projectsData.filter((p) => p.status?.toLowerCase() === "published");
+      setDeployments(published);
     }
-    
-    // For now deployments are just mock mapped, we'll fetch real ones if needed later
-    setDeployments([]);
 
     setIsLoading(false);
   };
@@ -400,16 +399,27 @@ export default function DashboardPage() {
                       
                       <div className="flex items-center justify-between pt-4 border-t border-subtle">
                         <div className="flex items-center gap-2">
-                          <div className={`w-2 h-2 rounded-full ${project.status === 'Published' ? 'bg-emerald-500' : project.status === 'Building' ? 'bg-yellow-500' : 'bg-gray-400'}`}></div>
-                          <span className="text-xs font-medium text-secondary">{project.status}</span>
+                          <div className={`w-2 h-2 rounded-full ${project.status?.toLowerCase() === 'published' ? 'bg-emerald-500' : project.status?.toLowerCase() === 'building' ? 'bg-yellow-500' : 'bg-gray-400'}`}></div>
+                          <span className="text-xs font-medium text-secondary capitalize">{project.status || 'draft'}</span>
                         </div>
                         <span className="text-xs text-muted flex items-center gap-1"><Clock size={12}/> {new Date(project.updated_at).toLocaleDateString()}</span>
                       </div>
 
-                      <div className="mt-4 pt-4 border-t border-subtle">
-                         <Link href={`/workspace/${project.id}`} className="block w-full py-2 text-center text-sm font-medium text-primary hover:bg-primary/5 rounded-md transition-colors">
+                      <div className="mt-4 pt-4 border-t border-subtle flex items-center gap-2">
+                         <Link href={`/workspace/${project.id}`} className="flex-1 py-2 text-center text-sm font-medium text-primary hover:bg-primary/5 rounded-md transition-colors border border-primary/20">
                            Open Workspace
                          </Link>
+                         {project.status?.toLowerCase() === 'published' && (
+                           <a
+                             href={`https://${project.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}-${project.id.slice(0, 8)}.pages.dev`}
+                             target="_blank"
+                             rel="noopener noreferrer"
+                             className="p-2 text-muted hover:text-emerald-500 hover:bg-surface rounded-md transition-colors"
+                             title="Open live site on Cloudflare Pages"
+                           >
+                             <Globe size={18} />
+                           </a>
+                         )}
                       </div>
                     </div>
                   ))}

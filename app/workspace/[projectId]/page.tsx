@@ -192,7 +192,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ projectId:
 
   return (
     <div className="flex flex-col h-screen bg-background overflow-hidden">
-      <WorkspaceHeader />
+      <WorkspaceHeader projectId={projectId} hasFiles={hasFiles} />
       <div className="flex flex-1 overflow-hidden">
         {/* Left Pane - Chat */}
         <div className="w-full md:w-[400px] lg:w-[450px] border-r border-subtle flex flex-col bg-background shrink-0 transition-all duration-300">
