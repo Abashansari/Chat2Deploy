@@ -33,15 +33,18 @@ export class DeploymentError extends Error {
 }
 
 /**
- * Validates and sanitizes a project name into a Cloudflare Pages compatible name.
- * Cloudflare Pages project names must:
- * - Be 1 to 58 characters
- * - Contain only lowercase alphanumeric characters and hyphens
- * - Not start or end with a hyphen
+ * Validates and sanitizes a user-provided project name into a clean, URL-safe,
+ * lowercase Pages project name.
+ * 
+ * Rules:
+ * - Lowercase alphanumeric characters and single hyphens.
+ * - 1 to 58 characters.
+ * - Does not start or end with a hyphen.
+ * - Fallbacks gracefully to "my-site" if empty or only symbols.
  */
 export function sanitizePagesProjectName(name: string, fallbackSuffix?: string): string {
   if (!name || typeof name !== "string") {
-    name = "chat2deploy";
+    name = "my-site";
   }
 
   // Convert to lowercase and replace non-alphanumeric characters with hyphens
@@ -52,10 +55,10 @@ export function sanitizePagesProjectName(name: string, fallbackSuffix?: string):
     .replace(/^-+|-+$/g, "");
 
   if (!sanitized) {
-    sanitized = "chat2deploy";
+    sanitized = "my-site";
   }
 
-  // Suffix with fallback or short hash if provided
+  // If a fallback suffix is explicitly provided (e.g. for collision resolution)
   if (fallbackSuffix) {
     const cleanSuffix = fallbackSuffix.toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 8);
     if (cleanSuffix && !sanitized.endsWith(cleanSuffix)) {
@@ -136,12 +139,45 @@ function getCloudflareCredentials(): { token: string; accountId: string } {
 }
 
 /**
- * Ensures the Cloudflare Pages project exists, creating it if necessary.
+ * Retrieves the actual assigned project subdomain (e.g. "my-portfolio.pages.dev")
+ * directly from the Cloudflare API if available.
  */
-async function ensurePagesProject(
+async function getProjectSubdomain(
   projectName: string,
   credentials: { token: string; accountId: string }
-): Promise<void> {
+): Promise<string | null> {
+  try {
+    const res = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${credentials.accountId}/pages/projects/${projectName}`,
+      {
+        headers: {
+          Authorization: `Bearer ${credentials.token}`,
+        },
+      }
+    );
+    if (res.ok) {
+      const data = await res.json();
+      if (data.success && data.result?.subdomain) {
+        return data.result.subdomain;
+      }
+    }
+  } catch (err) {
+    console.warn(`[cloudflare] Failed to fetch project subdomain for '${projectName}':`, err);
+  }
+  return null;
+}
+
+/**
+ * Ensures the Cloudflare Pages project exists, creating it if necessary.
+ * Handles project name collisions gracefully.
+ * 
+ * Returns the resolved Cloudflare project name and its canonical public pages.dev URL.
+ */
+async function ensurePagesProject(
+  preferredName: string,
+  fallbackSuffix: string | undefined,
+  credentials: { token: string; accountId: string }
+): Promise<{ projectName: string; expectedUrl: string }> {
   const env = {
     ...process.env,
     CLOUDFLARE_API_TOKEN: credentials.token,
@@ -149,61 +185,94 @@ async function ensurePagesProject(
     WRANGLER_SEND_METRICS: "false",
   };
 
-  try {
-    // Attempt project creation with --force to create directly on Cloudflare Pages
-    // Note: wrangler requires --force when creating pages projects without workers delegation
-    await execFileAsync(
-      "npx",
-      [
-        "wrangler",
-        "pages",
-        "project",
-        "create",
-        projectName,
-        "--production-branch=main",
-        "--force",
-      ],
-      {
-        env,
-        timeout: 30000,
-        maxBuffer: 5 * 1024 * 1024,
-      }
-    );
-  } catch (error: unknown) {
-    const err = error as { stdout?: string; stderr?: string; message?: string };
-    const combinedOutput = `${err.stdout || ""} ${err.stderr || ""} ${err.message || ""}`;
+  // Try preferred meaningful name first
+  const candidateNames = [preferredName];
 
-    // If the project already exists, that is perfectly normal
-    if (/already exists|Project already exists/i.test(combinedOutput)) {
-      return;
-    }
-
-    // If already exists with another status code, verify by inspecting output
-    if (!combinedOutput.includes("Successfully created")) {
-      // If error is something else, log safely without exposing token
-      console.warn(`[cloudflare] Project creation note for '${projectName}':`, err.message?.slice(0, 150));
+  // If a fallback suffix is available and preferredName is different, prepare it as backup candidate
+  if (fallbackSuffix) {
+    const nameWithSuffix = sanitizePagesProjectName(preferredName, fallbackSuffix);
+    if (nameWithSuffix !== preferredName) {
+      candidateNames.push(nameWithSuffix);
     }
   }
+
+  for (let i = 0; i < candidateNames.length; i++) {
+    const candidate = candidateNames[i];
+    try {
+      const { stdout } = await execFileAsync(
+        "npx",
+        [
+          "wrangler",
+          "pages",
+          "project",
+          "create",
+          candidate,
+          "--production-branch=main",
+          "--force",
+        ],
+        {
+          env,
+          timeout: 30000,
+          maxBuffer: 5 * 1024 * 1024,
+        }
+      );
+
+      // Successfully created! Check if wrangler output mentions the assigned domain
+      const match = stdout.match(/https:\/\/([a-zA-Z0-9.-]+\.pages\.dev)/);
+      const subdomain = match ? match[1] : await getProjectSubdomain(candidate, credentials) || `${candidate}.pages.dev`;
+
+      return {
+        projectName: candidate,
+        expectedUrl: `https://${subdomain}`,
+      };
+    } catch (error: unknown) {
+      const err = error as { stdout?: string; stderr?: string; message?: string };
+      const combinedOutput = `${err.stdout || ""} ${err.stderr || ""} ${err.message || ""}`;
+
+      // If the project already exists in this account, we can deploy to it!
+      if (/already exists|Project already exists/i.test(combinedOutput)) {
+        const subdomain = (await getProjectSubdomain(candidate, credentials)) || `${candidate}.pages.dev`;
+        return {
+          projectName: candidate,
+          expectedUrl: `https://${subdomain}`,
+        };
+      }
+
+      // If this was the last candidate, throw informative error
+      if (i === candidateNames.length - 1) {
+        console.warn(`[cloudflare] Failed to ensure Pages project for '${candidate}':`, err.message?.slice(0, 150));
+        return {
+          projectName: candidate,
+          expectedUrl: `https://${candidate}.pages.dev`,
+        };
+      }
+    }
+  }
+
+  return {
+    projectName: preferredName,
+    expectedUrl: `https://${preferredName}.pages.dev`,
+  };
 }
 
 /**
  * Extracts deployment URL and deployment ID from wrangler deploy stdout.
+ * Prefers the clean canonical production URL (e.g. "https://my-portfolio.pages.dev")
+ * over the ephemeral deployment hash subdomain.
  */
-function parseWranglerOutput(stdout: string, fallbackProjectName: string): { url: string; id: string } {
-  // Typical output: "✨ Deployment complete! Take a peek over at https://ebf471c8.my-project.pages.dev"
+function parseWranglerOutput(
+  stdout: string,
+  projectName: string,
+  canonicalDomain?: string
+): { url: string; id: string } {
   const urlRegex = /https:\/\/[a-zA-Z0-9.-]+\.pages\.dev/g;
   const matches = stdout.match(urlRegex) || [];
 
-  let chosenUrl = "";
   let deploymentId = "";
 
   if (matches.length > 0) {
-    // Pick the most specific deployment URL (e.g. hash.project.pages.dev) or primary project.pages.dev
-    const specificUrl = matches.find((u) => u.includes(`.${fallbackProjectName}.pages.dev`));
-    chosenUrl = specificUrl || matches[matches.length - 1];
-
-    // Extract subdomain hash if present
-    const urlObj = new URL(chosenUrl);
+    const rawUrl = matches[matches.length - 1];
+    const urlObj = new URL(rawUrl);
     const hostParts = urlObj.hostname.split(".");
     if (hostParts.length >= 4) {
       deploymentId = hostParts[0]; // e.g., 'ebf471c8'
@@ -211,25 +280,19 @@ function parseWranglerOutput(stdout: string, fallbackProjectName: string): { url
       deploymentId = `${Date.now().toString(36)}`;
     }
   } else {
-    // Fallback URL if regex didn't catch it
-    chosenUrl = `https://${fallbackProjectName}.pages.dev`;
     deploymentId = `${Date.now().toString(36)}`;
   }
 
-  return { url: chosenUrl, id: deploymentId };
+  // Canonical production URL is https://<projectName>.pages.dev or the specific project domain assigned
+  const productionUrl = canonicalDomain
+    ? `https://${canonicalDomain}`
+    : `https://${projectName}.pages.dev`;
+
+  return { url: productionUrl, id: deploymentId };
 }
 
 /**
  * Deploys an array of static website files to Cloudflare Pages using Wrangler CLI.
- * 
- * Flow:
- * 1. Validates files and credentials.
- * 2. Prepares isolated temporary output directory.
- * 3. Writes all files safely.
- * 4. Ensures project exists on Cloudflare Pages.
- * 5. Executes `npx wrangler pages deploy`.
- * 6. Cleans up temporary files securely in a finally block.
- * 7. Returns deployment status, verified URL, and ID.
  */
 export async function deployToCloudflarePages(options: {
   projectName: string;
@@ -245,8 +308,9 @@ export async function deployToCloudflarePages(options: {
   // 2. Validate credentials
   const credentials = getCloudflareCredentials();
 
-  // 3. Compute sanitized project name
-  const safeProjectName = sanitizePagesProjectName(options.projectName, projectId);
+  // 3. Compute meaningful, clean project name without unnecessary random suffixes
+  // If user project name is "My Portfolio", safeProjectName will be "my-portfolio"
+  const safeProjectName = sanitizePagesProjectName(options.projectName);
 
   // 4. Create isolated temporary workspace for the static assets
   const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "c2d-deploy-"));
@@ -257,7 +321,6 @@ export async function deployToCloudflarePages(options: {
       const normalizedRelative = path.normalize(file.path);
       const destinationPath = path.join(tempDir, normalizedRelative);
 
-      // Create parent directories if nested (e.g., assets/style.css)
       await fs.mkdir(path.dirname(destinationPath), { recursive: true });
       await fs.writeFile(destinationPath, file.content, "utf8");
     }
@@ -272,10 +335,14 @@ export async function deployToCloudflarePages(options: {
       );
     }
 
-    // 5. Ensure Pages project exists
-    await ensurePagesProject(safeProjectName, credentials);
+    // 5. Ensure Pages project exists (passing projectId as fallback suffix only if collision occurs)
+    const { projectName: actualProjectName, expectedUrl } = await ensurePagesProject(
+      safeProjectName,
+      projectId,
+      credentials
+    );
 
-    // 6. Execute deployment via Wrangler CLI securely using execFile (prevents command injection)
+    // 6. Execute deployment via Wrangler CLI securely using execFile
     const env = {
       ...process.env,
       CLOUDFLARE_API_TOKEN: credentials.token,
@@ -289,7 +356,7 @@ export async function deployToCloudflarePages(options: {
       "deploy",
       tempDir,
       "--project-name",
-      safeProjectName,
+      actualProjectName,
       "--branch",
       branch,
       "--commit-dirty=true",
@@ -297,13 +364,12 @@ export async function deployToCloudflarePages(options: {
 
     const { stdout, stderr } = await execFileAsync("npx", args, {
       env,
-      timeout: 120000, // 2 minutes max
+      timeout: 120000,
       maxBuffer: 10 * 1024 * 1024,
     });
 
     const combinedOutput = `${stdout || ""} ${stderr || ""}`;
 
-    // Verify successful deployment indication from Wrangler
     if (!combinedOutput.includes("Deployment complete") && !combinedOutput.includes("Success!")) {
       throw new DeploymentError(
         `Cloudflare deployment failed: ${combinedOutput.slice(0, 300)}`,
@@ -311,12 +377,14 @@ export async function deployToCloudflarePages(options: {
       );
     }
 
-    const { url, id } = parseWranglerOutput(stdout, safeProjectName);
+    // Determine the true public project URL
+    const canonicalDomain = expectedUrl.replace(/^https?:\/\//, "").replace(/\/+$/, "");
+    const { url, id } = parseWranglerOutput(stdout, actualProjectName, canonicalDomain);
 
     return {
       success: true,
       deploymentUrl: url,
-      projectName: safeProjectName,
+      projectName: actualProjectName,
       deploymentId: id,
       timestamp: new Date().toISOString(),
       status: "published",
@@ -329,7 +397,6 @@ export async function deployToCloudflarePages(options: {
     const err = error as { message?: string; stdout?: string; stderr?: string };
     const msg = err.message || "Unknown error during Cloudflare deployment";
 
-    // Clean up sensitive details from error message
     const sanitizedMsg = msg
       .replace(new RegExp(credentials.token, "gi"), "[REDACTED]")
       .replace(new RegExp(credentials.accountId, "gi"), "[REDACTED]");
@@ -343,7 +410,6 @@ export async function deployToCloudflarePages(options: {
       "DEPLOYMENT_EXECUTION_ERROR"
     );
   } finally {
-    // 7. Always cleanly remove the temporary directory and assets
     try {
       await fs.rm(tempDir, { recursive: true, force: true });
     } catch (cleanupErr) {
