@@ -50,13 +50,13 @@ export default function ChatPanel({ messages, generationStatus, onGenerate }: Ch
   const getStatusLabel = (status?: GenerationStatus) => {
     switch (status) {
       case "generating":
-        return "Generating website...";
+        return "Generating website (with auto-retry on spikes)...";
       case "rendering":
         return "Preparing preview...";
       case "ready":
         return "Preview ready";
       case "error":
-        return "Generation failed";
+        return "Generation temporarily failed";
       default:
         return "";
     }
@@ -116,9 +116,32 @@ export default function ChatPanel({ messages, generationStatus, onGenerate }: Ch
               ) : (
                 <div className="space-y-2 text-sm">
                   {msg.status && (
-                    <div className="flex items-center gap-2 font-mono text-muted bg-surface p-2.5 rounded-md border border-subtle">
-                      {getStatusIcon(msg.status)}
-                      <span className="text-xs">{msg.status === "ready" || msg.status === "error" ? msg.content : getStatusLabel(msg.status)}</span>
+                    <div className="flex flex-col gap-2 font-mono text-muted bg-surface p-2.5 rounded-md border border-subtle">
+                      <div className="flex items-center gap-2">
+                        {getStatusIcon(msg.status)}
+                        <span className="text-xs">
+                          {msg.status === "ready" || msg.status === "error" ? msg.content : getStatusLabel(msg.status)}
+                        </span>
+                      </div>
+                      {msg.status === "error" && msg.failedPrompt && (
+                        <div className="flex items-center gap-2 pt-1 border-t border-subtle/50 font-sans">
+                          <button
+                            type="button"
+                            disabled={isGenerating}
+                            onClick={() => onGenerate(msg.failedPrompt!)}
+                            className="text-xs px-2.5 py-1 bg-primary text-white rounded hover:opacity-90 transition-opacity disabled:opacity-50"
+                          >
+                            Retry Request
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setInput(msg.failedPrompt!)}
+                            className="text-xs px-2.5 py-1 bg-subtle text-foreground rounded hover:bg-subtle/80 transition-colors"
+                          >
+                            Edit Prompt
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
                   {!msg.status && (

@@ -20,7 +20,8 @@ export default function WorkspacePage({ params }: { params: Promise<{ projectId:
   const [isInitializing, setIsInitializing] = useState(true);
   const [device, setDevice] = useState<"Desktop" | "Tablet" | "Mobile">("Desktop");
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [generatedHtml, setGeneratedHtml] = useState<string | null>(null);
+  const [hasFiles, setHasFiles] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
   const [generationStatus, setGenerationStatus] = useState<GenerationStatus>("idle");
   const [projectTitle, setProjectTitle] = useState<string>("Loading Project...");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -59,16 +60,15 @@ export default function WorkspacePage({ params }: { params: Promise<{ projectId:
       })));
     }
 
-    // Fetch latest file
+    // Fetch latest file to check if we have any files
     const { data: files } = await supabase
       .from("project_files")
-      .select("*")
+      .select("id")
       .eq("project_id", projectId)
-      .order("updated_at", { ascending: false })
       .limit(1);
 
     if (files && files.length > 0) {
-      setGeneratedHtml(files[0].content);
+      setHasFiles(true);
       setGenerationStatus("ready");
     }
 
@@ -137,7 +137,8 @@ export default function WorkspacePage({ params }: { params: Promise<{ projectId:
       // Small delay to let the UI show the rendering state before iframe loads
       setTimeout(() => {
         if (currentRequestId !== requestIdRef.current) return;
-        setGeneratedHtml(data.html);
+        setHasFiles(true);
+        setRefreshKey(k => k + 1);
         setGenerationStatus("ready");
       }, 300);
     } catch (error: unknown) {
@@ -152,6 +153,8 @@ export default function WorkspacePage({ params }: { params: Promise<{ projectId:
             ...updated[idx],
             content: errorMessage,
             status: "error",
+            retryable: true,
+            failedPrompt: prompt,
           };
         }
         return updated;
@@ -177,7 +180,9 @@ export default function WorkspacePage({ params }: { params: Promise<{ projectId:
           setDevice={setDevice}
           isFullscreen={isFullscreen}
           setIsFullscreen={setIsFullscreen}
-          generatedHtml={generatedHtml}
+          projectId={projectId}
+          refreshKey={refreshKey}
+          hasFiles={hasFiles}
           generationStatus={generationStatus}
           projectTitle={projectTitle}
         />
@@ -205,7 +210,9 @@ export default function WorkspacePage({ params }: { params: Promise<{ projectId:
             setDevice={setDevice}
             isFullscreen={isFullscreen}
             setIsFullscreen={setIsFullscreen}
-            generatedHtml={generatedHtml}
+            projectId={projectId}
+            refreshKey={refreshKey}
+            hasFiles={hasFiles}
             generationStatus={generationStatus}
             projectTitle={projectTitle}
           />

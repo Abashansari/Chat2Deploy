@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { RefreshCw, Monitor, Tablet, Smartphone, Maximize2, Minimize2, Loader2, Sparkles, AlertCircle } from "lucide-react";
 import type { GenerationStatus } from "./types";
 
@@ -9,7 +9,9 @@ type PreviewPanelProps = {
   setDevice: (d: "Desktop" | "Tablet" | "Mobile") => void;
   isFullscreen: boolean;
   setIsFullscreen: (b: boolean) => void;
-  generatedHtml: string | null;
+  projectId: string;
+  refreshKey: number;
+  hasFiles: boolean;
   generationStatus: GenerationStatus;
   projectTitle: string;
 };
@@ -19,7 +21,9 @@ export default function PreviewPanel({
   setDevice,
   isFullscreen,
   setIsFullscreen,
-  generatedHtml,
+  projectId,
+  refreshKey,
+  hasFiles,
   generationStatus,
   projectTitle,
 }: PreviewPanelProps) {
@@ -42,6 +46,11 @@ export default function PreviewPanel({
   const handleRefresh = useCallback(() => {
     setIframeKey((k) => k + 1);
   }, []);
+
+  // Sync internal iframeKey with parent's refreshKey
+  useEffect(() => {
+    setIframeKey(refreshKey);
+  }, [refreshKey]);
 
   const getStatusBadge = () => {
     switch (generationStatus) {
@@ -78,8 +87,8 @@ export default function PreviewPanel({
     }
   };
 
-  // Build the srcdoc for the sandboxed iframe
-  const srcdoc = generatedHtml || null;
+  // Build the src for the sandboxed iframe
+  const previewUrl = hasFiles ? `/api/preview/${projectId}/index.html` : null;
 
   return (
     <div className="flex flex-col h-full relative">
@@ -162,7 +171,7 @@ export default function PreviewPanel({
               <div className="w-2.5 h-2.5 rounded-full bg-emerald-400/50"></div>
             </div>
             <div className="bg-background border border-subtle rounded text-xs text-muted px-3 py-1 flex-1 max-w-md mx-auto text-center font-mono truncate">
-              {generatedHtml ? `https://preview.chat2deploy.dev/${projectTitle.toLowerCase().replace(/\s+/g, "-")}` : "https://preview.chat2deploy.dev"}
+              {hasFiles ? `https://preview.chat2deploy.dev/${projectTitle.toLowerCase().replace(/\s+/g, "-")}` : "https://preview.chat2deploy.dev"}
             </div>
           </div>
 
@@ -179,12 +188,12 @@ export default function PreviewPanel({
                 </p>
                 <p className="text-xs text-gray-400 mt-1">This may take a few seconds</p>
               </div>
-            ) : srcdoc ? (
+            ) : previewUrl ? (
               /* Generated website via sandboxed iframe */
               <iframe
                 key={iframeKey}
                 ref={iframeRef}
-                srcDoc={srcdoc}
+                src={previewUrl}
                 sandbox="allow-scripts allow-same-origin"
                 className="w-full h-full border-0"
                 title={projectTitle}

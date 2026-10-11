@@ -5,4 +5,6 @@ export type ChatMessage = {
   role: "user" | "assistant";
   content: string;
   status?: GenerationStatus;
+  retryable?: boolean;
+  failedPrompt?: string;
 };
