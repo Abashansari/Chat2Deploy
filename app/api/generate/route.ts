@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { generateWebsite, modifyWebsite, GeneratedFile, GeminiServiceError, classifyGeminiError } from "@/lib/ai/gemini";
 import { createClient } from "@/lib/supabase/server";
+import { createVersionSnapshot, getProjectVersionsList } from "@/lib/versions";
 
 export async function POST(request: Request) {
   try {
@@ -121,7 +122,29 @@ export async function POST(request: Request) {
       content: aiResponse
     });
 
-    // 4. Update the project files in the database
+    // 4. Preserve existing project version before applying any changes if not already versioned
+    if (isModification && existingFiles.length > 0) {
+      try {
+        const existingVersions = await getProjectVersionsList({
+          supabase,
+          projectId,
+          userId: user.id,
+        });
+        if (existingVersions.length === 0) {
+          await createVersionSnapshot({
+            supabase,
+            projectId,
+            userId: user.id,
+            changeSummary: "Initial project version",
+            files: existingFiles,
+          });
+        }
+      } catch (baselineErr) {
+        console.warn("[/api/generate] Baseline version check warning:", baselineErr);
+      }
+    }
+
+    // 5. Update the project files in the database
     // We determine what to insert/update and what to delete based on the new file list.
     const newPaths = new Set(result.files.map(f => f.path));
     const oldPaths = new Set(existingFiles.map(f => f.path));
@@ -151,8 +174,27 @@ export async function POST(request: Request) {
         throw new Error(`Failed to save file ${file.path}`);
       }
     }
-    
-    // 5. Update project updated_at
+
+    // 6. Automatically create a new version snapshot for this successful generation/modification
+    let versionSnapshot = null;
+    try {
+      const changeSummary = isModification
+        ? `Modified: "${prompt.trim().slice(0, 100)}"`
+        : `Generated: "${result.title || "Website"}"`;
+
+      versionSnapshot = await createVersionSnapshot({
+        supabase,
+        projectId,
+        userId: user.id,
+        changeSummary,
+        files: result.files,
+      });
+    } catch (verError) {
+      console.error("[/api/generate] Failed to create version snapshot:", verError);
+      // Non-fatal to keep files preserved, but log error
+    }
+
+    // 7. Update project updated_at
     await supabase.from("projects").update({ updated_at: new Date().toISOString() }).eq("id", projectId);
 
     // Save generation success
@@ -161,7 +203,10 @@ export async function POST(request: Request) {
       status: "success"
     });
 
-    return NextResponse.json(result);
+    return NextResponse.json({
+      ...result,
+      version: versionSnapshot?.version_number ?? 1,
+    });
   } catch (error: unknown) {
     console.error("[/api/generate] Error:", error);
 

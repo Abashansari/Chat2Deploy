@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import WorkspaceHeader from "../../components/workspace/WorkspaceHeader";
 import ChatPanel from "../../components/workspace/ChatPanel";
 import PreviewPanel from "../../components/workspace/PreviewPanel";
+import VersionHistoryPanel from "../../components/workspace/VersionHistoryPanel";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "../../components/auth/AuthProvider";
 import { Loader2 } from "lucide-react";
@@ -28,6 +29,9 @@ export default function WorkspacePage({ params }: { params: Promise<{ projectId:
   const [deploymentError, setDeploymentError] = useState<string | null>(null);
   const [projectTitle, setProjectTitle] = useState<string>("Loading Project...");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [currentVersionNumber, setCurrentVersionNumber] = useState<number>(1);
+  const [historyRefreshTrigger, setHistoryRefreshTrigger] = useState(0);
   const requestIdRef = useRef(0);
 
   const loadProjectData = async () => {
@@ -75,6 +79,19 @@ export default function WorkspacePage({ params }: { params: Promise<{ projectId:
       setGenerationStatus("ready");
     }
 
+    // Fetch version history to set current version number
+    try {
+      const verRes = await fetch(`/api/versions?projectId=${projectId}`);
+      if (verRes.ok) {
+        const verData = await verRes.json();
+        if (verData.versions && verData.versions.length > 0) {
+          setCurrentVersionNumber(verData.versions[0].version_number);
+        }
+      }
+    } catch {
+      // Non-critical
+    }
+
     setIsInitializing(false);
   };
 
@@ -86,6 +103,24 @@ export default function WorkspacePage({ params }: { params: Promise<{ projectId:
     }
     loadProjectData();
   }, [user, isAuthLoading]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleVersionRestored = useCallback((newVersionNumber: number, restoredFromNumber: number) => {
+    setCurrentVersionNumber(newVersionNumber);
+    setHasFiles(true);
+    setRefreshKey(k => k + 1);
+    setHistoryRefreshTrigger(t => t + 1);
+    setGenerationStatus("ready");
+
+    setMessages(prev => [
+      ...prev,
+      {
+        id: `restore-${Date.now()}`,
+        role: "assistant",
+        content: `Restored project to Version ${restoredFromNumber}. Created Version ${newVersionNumber}.`,
+        status: "ready",
+      },
+    ]);
+  }, []);
 
   const handleGenerate = useCallback(async (prompt: string) => {
     const currentRequestId = ++requestIdRef.current;
@@ -119,6 +154,11 @@ export default function WorkspacePage({ params }: { params: Promise<{ projectId:
       const data = await res.json();
 
       if (currentRequestId !== requestIdRef.current) return;
+
+      if (data.version) {
+        setCurrentVersionNumber(data.version);
+        setHistoryRefreshTrigger(t => t + 1);
+      }
 
       const aiResponse = `Generated "${data.title}" — ${data.description}`;
 
@@ -225,10 +265,19 @@ export default function WorkspacePage({ params }: { params: Promise<{ projectId:
           hasFiles={hasFiles}
           generationStatus={generationStatus}
           projectTitle={projectTitle}
+          currentVersionNumber={currentVersionNumber}
           deploymentStatus={deploymentStatus}
           deploymentDetails={deploymentDetails}
           deploymentError={deploymentError}
           onDismissDeployment={handleDismissDeployment}
+          onOpenHistory={() => setIsHistoryOpen(true)}
+        />
+        <VersionHistoryPanel
+          projectId={projectId}
+          isOpen={isHistoryOpen}
+          onClose={() => setIsHistoryOpen(false)}
+          onVersionRestored={handleVersionRestored}
+          refreshTrigger={historyRefreshTrigger}
         />
       </div>
     );
@@ -239,9 +288,11 @@ export default function WorkspacePage({ params }: { params: Promise<{ projectId:
       <WorkspaceHeader
         projectId={projectId}
         hasFiles={hasFiles}
+        currentVersionNumber={currentVersionNumber}
         deploymentStatus={deploymentStatus}
         deploymentDetails={deploymentDetails}
         onDeploy={handleDeploy}
+        onOpenHistory={() => setIsHistoryOpen(true)}
       />
       <div className="flex flex-1 overflow-hidden">
         {/* Left Pane - Chat */}
@@ -265,13 +316,24 @@ export default function WorkspacePage({ params }: { params: Promise<{ projectId:
             hasFiles={hasFiles}
             generationStatus={generationStatus}
             projectTitle={projectTitle}
+            currentVersionNumber={currentVersionNumber}
             deploymentStatus={deploymentStatus}
             deploymentDetails={deploymentDetails}
             deploymentError={deploymentError}
             onDismissDeployment={handleDismissDeployment}
+            onOpenHistory={() => setIsHistoryOpen(true)}
           />
         </div>
       </div>
+
+      {/* Version Control and Rollback Drawer */}
+      <VersionHistoryPanel
+        projectId={projectId}
+        isOpen={isHistoryOpen}
+        onClose={() => setIsHistoryOpen(false)}
+        onVersionRestored={handleVersionRestored}
+        refreshTrigger={historyRefreshTrigger}
+      />
     </div>
   );
 }

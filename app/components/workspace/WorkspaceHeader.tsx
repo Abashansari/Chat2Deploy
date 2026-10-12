@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Rocket, Loader2, CheckCircle2, ExternalLink, AlertCircle, X, Globe } from "lucide-react";
+import { Rocket, Loader2, CheckCircle2, ExternalLink, AlertCircle, X, Globe, History } from "lucide-react";
 import { ThemeToggle } from "../ThemeToggle";
 import { AuthAwareBackButton } from "../auth/AuthAwareBackButton";
 import type { DeploymentStatus, DeploymentDetails } from "./types";
@@ -9,17 +9,21 @@ import type { DeploymentStatus, DeploymentDetails } from "./types";
 interface WorkspaceHeaderProps {
   projectId?: string;
   hasFiles?: boolean;
+  currentVersionNumber?: number;
   deploymentStatus?: DeploymentStatus;
   deploymentDetails?: DeploymentDetails | null;
   onDeploy?: () => void;
+  onOpenHistory?: () => void;
 }
 
 export default function WorkspaceHeader({
   projectId,
   hasFiles,
+  currentVersionNumber,
   deploymentStatus = "idle",
   deploymentDetails = null,
   onDeploy,
+  onOpenHistory,
 }: WorkspaceHeaderProps) {
   const [internalError, setInternalError] = useState<string | null>(null);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
@@ -74,6 +78,22 @@ export default function WorkspaceHeader({
               Live: {deploymentDetails.url.replace(/^https?:\/\//, "")}
               <ExternalLink size={12} />
             </a>
+          )}
+
+          {onOpenHistory && (
+            <button
+              onClick={onOpenHistory}
+              title="View version history and rollback"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-foreground bg-surface hover:bg-surface/80 border border-subtle rounded-md transition-colors shadow-2xs"
+            >
+              <History size={14} className="text-primary" />
+              <span>History</span>
+              {currentVersionNumber !== undefined && currentVersionNumber > 0 && (
+                <span className="font-mono text-[10px] font-bold bg-primary/10 text-primary px-1.5 py-0.5 rounded border border-primary/20">
+                  v{currentVersionNumber}
+                </span>
+              )}
+            </button>
           )}
 
           <ThemeToggle />

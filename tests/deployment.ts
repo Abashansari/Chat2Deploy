@@ -14,8 +14,8 @@ function testProjectNameSanitization() {
     { input: "My Awesome Portfolio", expected: "my-awesome-portfolio" },
     { input: "Coffee & Bakery Shop 2026!", expected: "coffee-bakery-shop-2026" },
     { input: "---Leading and Trailing---", expected: "leading-and-trailing" },
-    { input: "$$$###", expected: "chat2deploy" },
-    { input: "", expected: "chat2deploy" },
+    { input: "$$$###", expected: "my-site" },
+    { input: "", expected: "my-site" },
   ];
 
   for (const { input, expected } of testCases) {

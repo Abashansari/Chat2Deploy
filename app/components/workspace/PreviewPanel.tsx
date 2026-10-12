@@ -16,6 +16,7 @@ import {
   ExternalLink,
   Layers,
   ArrowUpRight,
+  History,
 } from "lucide-react";
 import type { GenerationStatus, DeploymentStatus, DeploymentDetails } from "./types";
 
@@ -38,10 +39,12 @@ type PreviewPanelProps = {
   hasFiles: boolean;
   generationStatus: GenerationStatus;
   projectTitle: string;
+  currentVersionNumber?: number;
   deploymentStatus?: DeploymentStatus;
   deploymentDetails?: DeploymentDetails | null;
   deploymentError?: string | null;
   onDismissDeployment?: () => void;
+  onOpenHistory?: () => void;
 };
 
 export default function PreviewPanel({
@@ -54,10 +57,12 @@ export default function PreviewPanel({
   hasFiles,
   generationStatus,
   projectTitle,
+  currentVersionNumber,
   deploymentStatus = "idle",
   deploymentDetails = null,
   deploymentError = null,
   onDismissDeployment,
+  onOpenHistory,
 }: PreviewPanelProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [iframeKey, setIframeKey] = useState(0);
@@ -183,6 +188,21 @@ export default function PreviewPanel({
           >
             <RefreshCw size={14} />
           </button>
+
+          {onOpenHistory && (
+            <button
+              className="text-muted hover:text-foreground transition-colors flex items-center gap-1 text-xs"
+              title="Version History"
+              onClick={onOpenHistory}
+            >
+              <History size={14} />
+              {currentVersionNumber !== undefined && currentVersionNumber > 0 && (
+                <span className="font-mono text-[10px] font-bold text-primary hidden sm:inline">
+                  v{currentVersionNumber}
+                </span>
+              )}
+            </button>
+          )}
 
           <div className="flex items-center gap-1 border border-subtle rounded-md p-1 bg-surface">
             <button
