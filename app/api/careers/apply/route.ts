@@ -24,6 +24,8 @@ const VALID_SKILLS = new Set([
   "FastAPI", "Express.js", "React", "Vue.js", "Next.js", "Tailwind CSS", "Supabase",
   // Databases
   "MongoDB", "PostgreSQL", "MySQL",
+  // Preferred Skills (Optional / Added Advantage)
+  "AWS & Cloud Computing", "AI & Machine Learning",
 ]);
 
 function isValidEmail(email: string): boolean {
