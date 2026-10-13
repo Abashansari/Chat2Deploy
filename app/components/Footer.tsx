@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 // Social icon SVGs (lucide-react no longer exports brand icons)
 const TwitterIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -28,15 +30,14 @@ const productLinks = [
 ];
 
 const companyLinks = [
-  { label: "About Us", href: "#about" },
+  { label: "About", href: "/about" },
   { label: "Careers", href: "/careers" },
-  { label: "Blog", href: "#blog" },
-  { label: "Contact", href: "#contact" },
+  { label: "Contact", href: "/contact" },
 ];
 
 const legalLinks = [
-  { label: "Privacy Policy", href: "#privacy" },
-  { label: "Terms of Service", href: "#terms" },
+  { label: "Privacy Policy", href: "/privacy-policy" },
+  { label: "Terms of Service", href: "/terms-of-service" },
 ];
 
 export default function Footer() {
@@ -46,7 +47,7 @@ export default function Footer() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 mb-12">
           {/* Brand */}
           <div className="col-span-2 sm:col-span-1">
-            <a href="#" className="flex items-center gap-2 mb-4">
+            <Link href="/" className="flex items-center gap-2 mb-4 group">
               <div className="w-7 h-7 bg-primary rounded-full flex items-center justify-center">
                 <svg
                   width="12"
@@ -72,11 +73,12 @@ export default function Footer() {
                   />
                 </svg>
               </div>
-              <span className="text-base font-bold text-foreground">MultiFlex</span>
-            </a>
+              <span className="text-base font-bold text-foreground group-hover:text-primary transition-colors">
+                Chat2Deploy
+              </span>
+            </Link>
             <p className="text-xs leading-relaxed max-w-[200px]">
-              The easiest way to build and host websites you love. Join millions
-              of creators building their digital presence with SiteFlow.
+              The easiest way to build and host websites with natural language AI. Create, refine, and deploy in minutes.
             </p>
           </div>
 
@@ -88,12 +90,12 @@ export default function Footer() {
             <ul className="space-y-2.5">
               {productLinks.map((link) => (
                 <li key={link.label}>
-                  <a
+                  <Link
                     href={link.href}
                     className="text-xs hover:text-foreground transition-colors"
                   >
                     {link.label}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -107,12 +109,12 @@ export default function Footer() {
             <ul className="space-y-2.5">
               {companyLinks.map((link) => (
                 <li key={link.label}>
-                  <a
+                  <Link
                     href={link.href}
                     className="text-xs hover:text-foreground transition-colors"
                   >
                     {link.label}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -126,12 +128,12 @@ export default function Footer() {
             <ul className="space-y-2.5">
               {legalLinks.map((link) => (
                 <li key={link.label}>
-                  <a
+                  <Link
                     href={link.href}
                     className="text-xs hover:text-foreground transition-colors"
                   >
                     {link.label}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -141,25 +143,25 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="border-t border-subtle pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-xs text-muted">
-            © 2026 MultiFlex Inc. All rights reserved.
+            © 2026 Chat2Deploy. All rights reserved.
           </p>
           <div className="flex items-center gap-4">
             <a
-              href="#twitter"
+              href="https://x.com/Abash_Ansari21?t=g8ZINRYA9Bd8RJcVg7jS-A&s=09"
               className="text-muted hover:text-secondary transition-colors"
               aria-label="Twitter"
             >
               <TwitterIcon />
             </a>
             <a
-              href="#linkedin"
+              href="https://www.linkedin.com/in/abash-ansari-0bb191326/"
               className="text-muted hover:text-secondary transition-colors"
               aria-label="LinkedIn"
             >
               <LinkedinIcon />
             </a>
             <a
-              href="#instagram"
+              href="https://www.instagram.com/abash_21ansari"
               className="text-muted hover:text-secondary transition-colors"
               aria-label="Instagram"
             >

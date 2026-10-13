@@ -37,6 +37,12 @@ export default function Navbar() {
 
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-8">
+                        <Link
+              href="/about"
+              className="text-sm text-secondary hover:text-foreground transition-colors"
+            >
+              About Us
+            </Link>
             <Link
               href="/careers"
               className="text-sm text-secondary hover:text-foreground transition-colors"
