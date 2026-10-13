@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { generateWebsite, modifyWebsite, GeneratedFile, GeminiServiceError, classifyGeminiError } from "@/lib/ai/gemini";
 import { createClient } from "@/lib/supabase/server";
 import { createVersionSnapshot, getProjectVersionsList } from "@/lib/versions";
+import { invalidateProjectCaches } from "@/lib/redis";
 
 export async function POST(request: Request) {
   try {
@@ -202,6 +203,9 @@ export async function POST(request: Request) {
       project_id: projectId,
       status: "success"
     });
+
+    // Invalidate affected Redis caches (versions, stats, projects)
+    await invalidateProjectCaches(user.id, projectId);
 
     return NextResponse.json({
       ...result,

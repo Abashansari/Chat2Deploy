@@ -1,8 +1,9 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
 
 interface User {
   id: string;
@@ -20,90 +21,112 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Cache profile names in memory to avoid repetitive DB requests on session events
+const profileNameCache = new Map<string, string>();
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
   const supabase = createClient();
+  const isMountedRef = useRef(true);
+
+  // Helper to update user state only when data actually changes (maintains object reference identity)
+  const applyUserUpdate = useCallback((newId: string | null, newName: string = "", newEmail: string = "") => {
+    setUser((prev) => {
+      if (!newId) {
+        return prev === null ? null : null;
+      }
+      if (prev && prev.id === newId && prev.name === newName && prev.email === newEmail) {
+        return prev;
+      }
+      return { id: newId, name: newName, email: newEmail };
+    });
+  }, []);
 
   useEffect(() => {
-    const fetchUser = async () => {
-      setIsLoading(true);
-      const { data: { session } } = await supabase.auth.getSession();
-      
+    isMountedRef.current = true;
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event: AuthChangeEvent, session: Session | null) => {
+      if (!isMountedRef.current) return;
+
       if (session?.user) {
-        // Fetch profile
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('full_name')
-          .eq('id', session.user.id)
-          .single();
+        const userId = session.user.id;
+        const email = session.user.email || "";
+        const fallbackName =
+          (session.user.user_metadata?.full_name as string) ||
+          profileNameCache.get(userId) ||
+          email;
 
-        setUser({
-          id: session.user.id,
-          name: profile?.full_name || session.user.email || '',
-          email: session.user.email || '',
-        });
+        // Apply immediately with cached or metadata name to minimize perceived latency
+        applyUserUpdate(userId, fallbackName, email);
+        setIsLoading(false);
+
+        // Fetch DB profile asynchronously only if not cached
+        if (!profileNameCache.has(userId)) {
+          try {
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("full_name")
+              .eq("id", userId)
+              .maybeSingle();
+
+            if (isMountedRef.current && profile?.full_name) {
+              profileNameCache.set(userId, profile.full_name);
+              applyUserUpdate(userId, profile.full_name, email);
+            }
+          } catch {
+            // Non-critical; fallbackName is already set
+          }
+        }
       } else {
-        setUser(null);
+        applyUserUpdate(null);
+        setIsLoading(false);
       }
-      setIsLoading(false);
-    };
-
-    fetchUser();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('full_name')
-          .eq('id', session.user.id)
-          .single();
-
-        setUser({
-          id: session.user.id,
-          name: profile?.full_name || session.user.email || '',
-          email: session.user.email || '',
-        });
-      } else {
-        setUser(null);
-      }
-      setIsLoading(false);
     });
 
     return () => {
+      isMountedRef.current = false;
       subscription.unsubscribe();
     };
-  }, [supabase]);
+  }, [supabase, applyUserUpdate]);
 
   // Route protection is handled by Next.js middleware, but keeping basic client check for UX
   useEffect(() => {
     if (isLoading) return;
 
     const protectedRoutes = ["/dashboard", "/workspace"];
-    const isProtectedRoute = protectedRoutes.some(route => pathname?.startsWith(route));
+    const isProtectedRoute = protectedRoutes.some((route) => pathname?.startsWith(route));
 
     if (isProtectedRoute && !user) {
       router.push("/login");
     }
   }, [user, isLoading, pathname, router]);
 
-  const login = (userData: { name: string; email: string }) => {
-    // This is kept for compatibility with existing UI that might call login() immediately.
-    // In real app, the onAuthStateChange will trigger.
-  };
+  const login = useCallback((_userData: { name: string; email: string }) => {
+    // Kept for backwards compatibility; onAuthStateChange handles state updates
+  }, []);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     await supabase.auth.signOut();
+    applyUserUpdate(null);
     router.push("/");
-  };
+  }, [supabase, router, applyUserUpdate]);
 
-  return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, logout }}>
-      {children}
-    </AuthContext.Provider>
+  const contextValue = useMemo<AuthContextType>(
+    () => ({
+      user,
+      isAuthenticated: !!user,
+      isLoading,
+      login,
+      logout,
+    }),
+    [user, isLoading, login, logout]
   );
+
+  return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
@@ -113,3 +136,4 @@ export function useAuth() {
   }
   return context;
 }
+

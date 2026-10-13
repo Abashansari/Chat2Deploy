@@ -34,77 +34,60 @@ export default function WorkspacePage({ params }: { params: Promise<{ projectId:
   const [historyRefreshTrigger, setHistoryRefreshTrigger] = useState(0);
   const requestIdRef = useRef(0);
 
-  const loadProjectData = async () => {
+  const loadedProjectIdRef = useRef<string | null>(null);
+
+  const loadProjectData = useCallback(async () => {
     setIsInitializing(true);
-    // Fetch project
-    const { data: project, error: projError } = await supabase
-      .from("projects")
-      .select("*")
-      .eq("id", projectId)
-      .single();
 
-    if (projError || !project) {
-      console.error(projError);
-      router.push("/dashboard");
-      return;
-    }
-
-    setProjectTitle(project.name);
-
-    // Fetch chat history
-    const { data: chats } = await supabase
-      .from("chat_history")
-      .select("*")
-      .eq("project_id", projectId)
-      .order("created_at", { ascending: true });
-
-    if (chats && chats.length > 0) {
-      setMessages(chats.map(c => ({
-        id: c.id,
-        role: c.role,
-        content: c.content,
-        status: c.role === "assistant" ? "ready" : undefined
-      })));
-    }
-
-    // Fetch latest file to check if we have any files
-    const { data: files } = await supabase
-      .from("project_files")
-      .select("id")
-      .eq("project_id", projectId)
-      .limit(1);
-
-    if (files && files.length > 0) {
-      setHasFiles(true);
-      setGenerationStatus("ready");
-    }
-
-    // Fetch version history to set current version number
     try {
-      const verRes = await fetch(`/api/versions?projectId=${projectId}`);
-      if (verRes.ok) {
-        const verData = await verRes.json();
-        if (verData.versions && verData.versions.length > 0) {
-          setCurrentVersionNumber(verData.versions[0].version_number);
-        }
+      // Parallelize all initial data queries
+      const [projResult, chatsResult, filesResult, verResult, deployResult] = await Promise.all([
+        supabase.from("projects").select("*").eq("id", projectId).single(),
+        supabase.from("chat_history").select("*").eq("project_id", projectId).order("created_at", { ascending: true }),
+        supabase.from("project_files").select("id").eq("project_id", projectId).limit(1),
+        fetch(`/api/versions?projectId=${encodeURIComponent(projectId)}`).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+        supabase.from("deployments").select("deployment_id, url, created_at, status").eq("project_id", projectId).eq("status", "success").order("created_at", { ascending: false }).limit(1),
+      ]);
+
+      const project = projResult.data;
+      if (projResult.error || !project) {
+        console.error("[WorkspacePage] Project query error:", projResult.error);
+        router.push("/dashboard");
+        return;
       }
-    } catch {
-      // Non-critical
-    }
 
-    // Fetch persisted deployment records to determine if project has ever been successfully deployed
-    try {
+      setProjectTitle(project.name);
+
+      // Populate chats
+      const chats = chatsResult.data;
+      if (chats && chats.length > 0) {
+        setMessages(
+          chats.map((c: any) => ({
+            id: c.id,
+            role: c.role,
+            content: c.content,
+            status: c.role === "assistant" ? "ready" : undefined,
+          }))
+        );
+      }
+
+      // Check if project has files
+      const files = filesResult.data;
+      if (files && files.length > 0) {
+        setHasFiles(true);
+        setGenerationStatus("ready");
+      }
+
+      // Version history
+      if (verResult?.versions && verResult.versions.length > 0) {
+        setCurrentVersionNumber(verResult.versions[0].version_number);
+      }
+
+      // Persisted deployment details
+      const deployRecords = deployResult.data;
       let existingDeployDetails: DeploymentDetails | null = null;
 
-      const { data: deployRecords, error: deployErr } = await supabase
-        .from("deployments")
-        .select("deployment_id, url, created_at, status")
-        .eq("project_id", projectId)
-        .eq("status", "success")
-        .order("created_at", { ascending: false })
-        .limit(1);
-
-      if (!deployErr && deployRecords && deployRecords.length > 0) {
+      if (deployRecords && deployRecords.length > 0) {
         existingDeployDetails = {
           url: deployRecords[0].url,
           id: deployRecords[0].deployment_id,
@@ -112,7 +95,9 @@ export default function WorkspacePage({ params }: { params: Promise<{ projectId:
         };
       } else if (project.deployment_url || project.status === "published") {
         existingDeployDetails = {
-          url: project.deployment_url || `https://${project.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${project.id.slice(0, 8)}.pages.dev`,
+          url:
+            project.deployment_url ||
+            `https://${project.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${project.id.slice(0, 8)}.pages.dev`,
           id: project.hosting_project_name || project.id.slice(0, 8),
           timestamp: project.last_deployed_at || project.updated_at,
         };
@@ -122,11 +107,11 @@ export default function WorkspacePage({ params }: { params: Promise<{ projectId:
         setDeploymentDetails(existingDeployDetails);
       }
     } catch (err) {
-      console.warn("[WorkspacePage] Could not load persisted deployment details:", err);
+      console.error("[WorkspacePage] Error loading project data:", err);
+    } finally {
+      setIsInitializing(false);
     }
-
-    setIsInitializing(false);
-  };
+  }, [projectId, supabase, router]);
 
   useEffect(() => {
     if (isAuthLoading) return;
@@ -134,8 +119,14 @@ export default function WorkspacePage({ params }: { params: Promise<{ projectId:
       router.push("/login");
       return;
     }
+
+    if (loadedProjectIdRef.current === projectId) {
+      return;
+    }
+    loadedProjectIdRef.current = projectId;
     loadProjectData();
-  }, [user, isAuthLoading]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user?.id, isAuthLoading, projectId, loadProjectData, router]);
+
 
   const handleVersionRestored = useCallback((newVersionNumber: number, restoredFromNumber: number) => {
     setCurrentVersionNumber(newVersionNumber);

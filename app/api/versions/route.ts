@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getProjectVersionsList } from "@/lib/versions";
+import { getProjectVersionsList, VersionSummary } from "@/lib/versions";
+import { cacheGet, cacheSet, cacheKeys, CACHE_TTL } from "@/lib/redis";
 
 export async function GET(request: Request) {
   try {
@@ -27,7 +28,19 @@ export async function GET(request: Request) {
       );
     }
 
-    // 3. Verify project ownership
+    // 3. Check Redis cache first
+    const cacheKey = cacheKeys.projectVersions(user.id, projectId);
+    const cachedVersions = await cacheGet<VersionSummary[]>(cacheKey);
+    if (cachedVersions) {
+      return NextResponse.json({
+        success: true,
+        projectId,
+        versions: cachedVersions,
+        cached: true,
+      });
+    }
+
+    // 4. Verify project ownership in Supabase
     const { data: project, error: projectError } = await supabase
       .from("projects")
       .select("id, name, user_id")
@@ -42,17 +55,21 @@ export async function GET(request: Request) {
       );
     }
 
-    // 4. Retrieve version list
+    // 5. Retrieve version list from DB
     const versions = await getProjectVersionsList({
       supabase,
       projectId,
       userId: user.id,
     });
 
+    // 6. Cache in Redis
+    await cacheSet(cacheKey, versions, CACHE_TTL.PROJECT_VERSIONS);
+
     return NextResponse.json({
       success: true,
       projectId,
       versions,
+      cached: false,
     });
   } catch (error: unknown) {
     console.error("[/api/versions] Error fetching versions:", error);
@@ -60,3 +77,4 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
+

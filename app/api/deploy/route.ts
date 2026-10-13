@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { deployToCloudflarePages, DeploymentError } from "@/lib/cloudflare";
+import { invalidateProjectCaches, invalidateUserDeployments } from "@/lib/redis";
 
 export async function POST(request: Request) {
   try {
@@ -214,7 +215,10 @@ export async function POST(request: Request) {
         console.info("[deploy] Deployments table log skipped:", deployHistErr);
       }
 
-      // 10. Return deployment details to client
+      // 10. Invalidate affected Redis caches (project, dashboard stats, deployments)
+      await invalidateProjectCaches(user.id, projectId);
+
+      // 11. Return deployment details to client
       return NextResponse.json({
         success: true,
         deploymentUrl: result.deploymentUrl,
@@ -247,6 +251,9 @@ export async function POST(request: Request) {
       } catch {
         // Non-critical
       }
+
+      // Invalidate user deployments in Redis so failed record is immediately visible
+      await invalidateUserDeployments(user.id);
 
       throw deployError;
     }

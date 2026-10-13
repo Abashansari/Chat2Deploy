@@ -44,7 +44,6 @@ export default function RegisterPage() {
 
     if (data.session) {
       router.push("/dashboard");
-      router.refresh();
     } else {
       setSuccess(true);
     }

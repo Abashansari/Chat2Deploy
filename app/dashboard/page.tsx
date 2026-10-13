@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ThemeToggle } from "../components/ThemeToggle";
@@ -98,48 +98,55 @@ export default function DashboardPage() {
   const [deploymentStatusFilter, setDeploymentStatusFilter] = useState<"all" | "success" | "failed">("all");
   const [deploymentSort, setDeploymentSort] = useState<"newest" | "oldest" | "name">("newest");
 
-  // Load All User Dashboard Data
+  const hasLoadedOnceRef = useRef(false);
+
+  // Load All User Dashboard Data in Parallel
   const loadDashboardData = useCallback(async () => {
-    if (!user) return;
-    setIsLoading(true);
+    const userId = user?.id;
+    if (!userId) return;
 
     try {
-      // 1. Fetch Projects from Supabase
-      const { data: projectsData, error: projectsError } = await supabase
-        .from("projects")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("updated_at", { ascending: false });
+      const [projData, depData, statsData] = await Promise.all([
+        fetch("/api/projects")
+          .then((r) => (r.ok ? r.json() : null))
+          .catch(() => null),
+        fetch("/api/deployments")
+          .then((r) => (r.ok ? r.json() : { deployments: [] }))
+          .catch(() => ({ deployments: [] })),
+        fetch("/api/dashboard/stats")
+          .then((r) => (r.ok ? r.json() : { stats: null }))
+          .catch(() => ({ stats: null })),
+      ]);
 
-      if (!projectsError && projectsData) {
-        setProjects(projectsData);
+      if (projData?.projects) {
+        setProjects(projData.projects);
+      } else {
+        // Fallback to direct supabase query if API is unavailable
+        const { data: fallbackProjects } = await supabase
+          .from("projects")
+          .select("*")
+          .eq("user_id", userId)
+          .order("updated_at", { ascending: false });
+        if (fallbackProjects) setProjects(fallbackProjects);
       }
 
-      // 2. Fetch Deployments from API
-      const depRes = await fetch("/api/deployments");
-      if (depRes.ok) {
-        const depData = await depRes.json();
-        setDeployments(depData.deployments || []);
+      setDeployments(depData.deployments || []);
+      if (statsData.stats) {
+        setStats(statsData.stats);
       }
-
-      // 3. Fetch Real Aggregated Dashboard Stats
-      const statsRes = await fetch("/api/dashboard/stats");
-      if (statsRes.ok) {
-        const statsData = await statsRes.json();
-        setStats(statsData.stats || null);
-      }
+      hasLoadedOnceRef.current = true;
     } catch (err) {
       console.error("[Dashboard] Error loading dashboard data:", err);
     } finally {
       setIsLoading(false);
     }
-  }, [user, supabase]);
+  }, [user?.id, supabase]);
 
   useEffect(() => {
-    if (user) {
-      loadDashboardData();
+    if (user?.id) {
+      loadDashboardData(); // eslint-disable-line react-hooks/set-state-in-effect
     }
-  }, [user, refreshTrigger, loadDashboardData]);
+  }, [user?.id, refreshTrigger, loadDashboardData]);
 
   // Temporary Toast Helper
   const showNotification = (message: string, type: "success" | "error" = "success") => {
@@ -155,28 +162,29 @@ export default function DashboardPage() {
     if (!newProjectName.trim() || isCreating || !user) return;
 
     setIsCreating(true);
-    const { data, error } = await supabase
-      .from("projects")
-      .insert([
-        {
-          name: newProjectName.trim(),
-          description: "New AI Project",
-          user_id: user.id,
-        },
-      ])
-      .select()
-      .single();
+    try {
+      const res = await fetch("/api/projects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newProjectName.trim() }),
+      });
 
-    setIsCreating(false);
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to create project.");
+      }
 
-    if (error) {
-      showNotification("Failed to create project: " + error.message, "error");
-    } else if (data) {
       setIsCreateModalOpen(false);
       setNewProjectName("");
-      router.push(`/workspace/${data.id}`);
+      router.push(`/workspace/${data.project.id}`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to create project.";
+      showNotification(msg, "error");
+    } finally {
+      setIsCreating(false);
     }
   };
+
 
   // Rename Project
   const handleExecuteRename = async (e: React.FormEvent) => {
@@ -195,6 +203,11 @@ export default function DashboardPage() {
       if (!res.ok) {
         throw new Error(data.error || "Failed to rename project.");
       }
+
+      // Optimistically update project name in memory
+      setProjects((prev) =>
+        prev.map((p) => (p.id === renameTarget.id ? { ...p, name: data.name } : p))
+      );
 
       showNotification(`Renamed project to "${data.name}".`);
       setRenameTarget(null);
@@ -223,6 +236,9 @@ export default function DashboardPage() {
       if (!res.ok) {
         throw new Error(data.error || "Failed to delete project.");
       }
+
+      // Optimistically remove project from state
+      setProjects((prev) => prev.filter((p) => p.id !== deleteTarget.id));
 
       showNotification(data.message || `Deleted project "${deleteTarget.name}".`);
       setDeleteTarget(null);
@@ -254,6 +270,16 @@ export default function DashboardPage() {
         throw new Error(data.error || "Failed to unpublish project.");
       }
 
+      // Optimistically update deployment and project state
+      setDeployments((prev) => prev.filter((d) => d.project_id !== removeDeployTarget.project_id));
+      setProjects((prev) =>
+        prev.map((p) =>
+          p.id === removeDeployTarget.project_id
+            ? { ...p, status: "draft", deployment_url: null }
+            : p
+        )
+      );
+
       showNotification(data.message || "Project removed from Deployments.");
       setRemoveDeployTarget(null);
       setRefreshTrigger((t) => t + 1);
@@ -263,6 +289,7 @@ export default function DashboardPage() {
     } finally {
       setIsRemovingDeploy(false);
     }
+
   };
 
   // Inline Re-Deploy Action
@@ -496,7 +523,7 @@ export default function DashboardPage() {
                 </h1>
                 <p className="text-muted text-sm md:text-base mt-1">
                   {activeTab === "overview" && "Live metrics, project management, and edge deployments."}
-                  {activeTab === "projects" && "Manage, rename, deploy, and inspect your AI-generated websites."}
+                  {activeTab === "projects" && "Manage, rename,setting deploy, and inspect your AI-generated websites."}
                   {activeTab === "deployments" && "Monitor live edge websites, deployment outcomes, and URLs."}
                   {activeTab === "analytics" && "Real application statistics derived from your project database."}
                   {activeTab === "settings" && "Account configuration and hosting infrastructure overview."}
@@ -1228,23 +1255,6 @@ export default function DashboardPage() {
                       <p className="font-semibold text-emerald-500 flex items-center gap-1">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Active
                       </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-card border border-subtle rounded-xl p-6 shadow-xs space-y-3">
-                  <h2 className="text-base font-bold text-foreground">Hosting Infrastructure</h2>
-                  <p className="text-xs text-muted">
-                    Static web assets generated by Chat2Deploy are stored in your Supabase database and distributed via Cloudflare Pages edge delivery.
-                  </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-2">
-                    <div className="p-3 bg-surface border border-subtle rounded-lg">
-                      <p className="font-semibold text-foreground">Supabase Database</p>
-                      <p className="text-muted text-[11px] mt-0.5">PostgreSQL with Row Level Security</p>
-                    </div>
-                    <div className="p-3 bg-surface border border-subtle rounded-lg">
-                      <p className="font-semibold text-foreground">Cloudflare Pages Edge</p>
-                      <p className="text-muted text-[11px] mt-0.5">Global CDN with SSL certificates</p>
                     </div>
                   </div>
                 </div>

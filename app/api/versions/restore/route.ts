@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { restoreProjectVersion } from "@/lib/versions";
+import { invalidateProjectCaches } from "@/lib/redis";
 
 export async function POST(request: Request) {
   try {
@@ -17,7 +18,7 @@ export async function POST(request: Request) {
     }
 
     // 2. Parse request body
-    let body: any;
+    let body: { projectId?: string; versionNumber?: number | string } | undefined;
     try {
       body = await request.json();
     } catch {
@@ -30,7 +31,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "A valid project ID is required." }, { status: 400 });
     }
 
-    const targetVersionNum = typeof versionNumber === "number" ? versionNumber : parseInt(versionNumber, 10);
+    const targetVersionNum = typeof versionNumber === "number" ? versionNumber : parseInt(String(versionNumber || ""), 10);
     if (isNaN(targetVersionNum) || targetVersionNum < 1) {
       return NextResponse.json({ error: "A valid version number is required." }, { status: 400 });
     }
@@ -68,6 +69,9 @@ export async function POST(request: Request) {
     } catch {
       // Non-critical if chat log fails
     }
+
+    // 6. Invalidate affected Redis caches
+    await invalidateProjectCaches(user.id, projectId);
 
     return NextResponse.json({
       success: true,

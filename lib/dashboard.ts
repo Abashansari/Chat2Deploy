@@ -1,5 +1,12 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { deleteCloudflarePagesProject } from "./cloudflare";
+import {
+  cacheGet,
+  cacheSet,
+  cacheKeys,
+  CACHE_TTL,
+  invalidateProjectCaches,
+} from "./redis";
 
 export interface DeploymentRecord {
   id: string;
@@ -39,17 +46,37 @@ export async function getUserDeployments(
     search?: string;
     status?: string;
     sort?: "newest" | "oldest" | "name";
+    projects?: any[];
   } = {}
 ): Promise<DeploymentRecord[]> {
-  const { search = "", status = "all", sort = "newest" } = options;
+  const { search = "", status = "all", sort = "newest", projects: passedProjects } = options;
 
-  // 1. Fetch user projects first to guarantee ownership & project names
-  const { data: userProjects, error: projErr } = await supabase
-    .from("projects")
-    .select("id, name, status, deployment_url, hosting_project_name, last_deployed_at, updated_at")
-    .eq("user_id", userId);
+  // Use Redis cache for direct user deployment queries
+  const filterHash = `${search.trim().toLowerCase()}_${status}_${sort}`;
+  const cacheKey = cacheKeys.userDeployments(userId, filterHash);
 
-  if (projErr || !userProjects || userProjects.length === 0) {
+  if (!passedProjects) {
+    const cachedDeployments = await cacheGet<DeploymentRecord[]>(cacheKey);
+    if (cachedDeployments) {
+      return cachedDeployments;
+    }
+  }
+
+  let userProjects = passedProjects;
+  if (!userProjects) {
+    // Fetch user projects to guarantee ownership & project names
+    const { data: fetchedProjects, error: projErr } = await supabase
+      .from("projects")
+      .select("id, name, status, deployment_url, hosting_project_name, last_deployed_at, updated_at")
+      .eq("user_id", userId);
+
+    if (projErr || !fetchedProjects || fetchedProjects.length === 0) {
+      return [];
+    }
+    userProjects = fetchedProjects;
+  }
+
+  if (userProjects.length === 0) {
     return [];
   }
 
@@ -139,6 +166,10 @@ export async function getUserDeployments(
     deployments.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   }
 
+  if (!passedProjects) {
+    await cacheSet(cacheKey, deployments, CACHE_TTL.USER_DEPLOYMENTS);
+  }
+
   return deployments;
 }
 
@@ -149,6 +180,12 @@ export async function getUserDashboardStats(
   supabase: SupabaseClient,
   userId: string
 ): Promise<DashboardStats> {
+  const cacheKey = cacheKeys.dashboardStats(userId);
+  const cachedStats = await cacheGet<DashboardStats>(cacheKey);
+  if (cachedStats) {
+    return cachedStats;
+  }
+
   // Fetch user projects
   const { data: projects = [] } = await supabase
     .from("projects")
@@ -165,8 +202,8 @@ export async function getUserDashboardStats(
   const deployedProjects = deployedProjectsList.length;
   const draftProjects = totalProjects - deployedProjects;
 
-  // Fetch real deployments
-  const allDeployments = await getUserDeployments(supabase, userId);
+  // Fetch real deployments reusing pre-fetched allProjects to avoid redundant DB call
+  const allDeployments = await getUserDeployments(supabase, userId, { projects: allProjects });
   const totalDeployments = allDeployments.length;
   const failedDeployments = allDeployments.filter((d) => d.status === "failed").length;
 
@@ -209,7 +246,7 @@ export async function getUserDashboardStats(
 
   const deploymentsTimeline = Array.from(timelineMap.values());
 
-  return {
+  const stats: DashboardStats = {
     totalProjects,
     deployedProjects,
     draftProjects,
@@ -220,6 +257,9 @@ export async function getUserDashboardStats(
     recentProjects: allProjects.slice(0, 6),
     recentDeployments: allDeployments.slice(0, 6),
   };
+
+  await cacheSet(cacheKey, stats, CACHE_TTL.DASHBOARD_STATS);
+  return stats;
 }
 
 /**
@@ -272,6 +312,9 @@ export async function removeProjectFromDeployments({
     // Non-critical
   }
 
+  // 5. Invalidate affected Redis caches
+  await invalidateProjectCaches(userId, projectId);
+
   return {
     success: true,
     message: `Project '${project.name}' was successfully removed from Deployments. Source code and version history remain preserved.`,
@@ -322,6 +365,9 @@ export async function deleteProjectPermanently({
     throw new Error("Failed to delete project from database.");
   }
 
+  // 4. Invalidate affected Redis caches
+  await invalidateProjectCaches(userId, projectId);
+
   return {
     success: true,
     message: `Project '${project.name}' and all associated resources have been permanently deleted.`,
@@ -360,5 +406,9 @@ export async function renameProjectTitle({
     throw new Error("Failed to rename project.");
   }
 
+  // Invalidate affected Redis caches
+  await invalidateProjectCaches(userId, projectId);
+
   return { success: true, name: data.name };
 }
+

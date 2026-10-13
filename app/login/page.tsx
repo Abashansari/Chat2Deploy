@@ -36,7 +36,6 @@ export default function LoginPage() {
 
     setIsLoading(false);
     router.push("/dashboard");
-    router.refresh();
   };
 
   return (
