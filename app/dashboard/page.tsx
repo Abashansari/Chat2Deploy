@@ -44,6 +44,7 @@ import {
   Server,
   Zap,
   Database,
+  FileDown,
 } from "lucide-react";
 import { useAuth } from "../components/auth/AuthProvider";
 import { createClient } from "@/lib/supabase/client";
@@ -97,6 +98,9 @@ export default function DashboardPage() {
 
   // Cache Purge State
   const [isPurgingCache, setIsPurgingCache] = useState(false);
+
+  // Report Generation State
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
 
   // Inline Deploy Action State (e.g. triggering redeploy from dashboard)
   const [deployingProjectId, setDeployingProjectId] = useState<string | null>(null);
@@ -378,6 +382,40 @@ export default function DashboardPage() {
       showNotification(msg, "error");
     } finally {
       setIsPurgingCache(false);
+    }
+  };
+
+  // Download PDF Analytics Report
+  const handleDownloadReport = async () => {
+    if (isGeneratingReport) return;
+    setIsGeneratingReport(true);
+    try {
+      const res = await fetch("/api/dashboard/report");
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || `Report generation failed (HTTP ${res.status}).`);
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const disposition = res.headers.get("Content-Disposition");
+      let filename = "Chat2Deploy-report.pdf";
+      if (disposition) {
+        const match = disposition.match(/filename="?([^"]+)"?/);
+        if (match?.[1]) filename = match[1];
+      }
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = filename;
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      URL.revokeObjectURL(url);
+      showNotification("Report downloaded successfully.");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to generate report.";
+      showNotification(msg, "error");
+    } finally {
+      setIsGeneratingReport(false);
     }
   };
 
@@ -1225,6 +1263,23 @@ export default function DashboardPage() {
             {/* TAB 4: ANALYTICS */}
             {activeTab === "analytics" && (
               <div className="space-y-8">
+                {/* Report Download Button */}
+                <div className="flex items-center justify-end">
+                  <button
+                    id="download-report-btn"
+                    onClick={handleDownloadReport}
+                    disabled={isGeneratingReport}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 text-xs font-semibold rounded-lg transition-all shadow-sm border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 hover:border-primary/50 disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {isGeneratingReport ? (
+                      <Loader2 size={15} className="animate-spin" />
+                    ) : (
+                      <FileDown size={15} />
+                    )}
+                    {isGeneratingReport ? "Generating Report..." : "Download Report"}
+                  </button>
+                </div>
+
                 {/* Real Summary Row */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="bg-card border border-subtle rounded-xl p-5 shadow-xs">
