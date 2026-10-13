@@ -29,7 +29,7 @@ interface CustomTooltipData {
   percentage: number;
 }
 
-function CustomTooltip({ active, payload }: TooltipProps<number, string>) {
+function CustomTooltip({ active, payload }: any) {
   if (active && payload && payload.length > 0) {
     const data = payload[0].payload as CustomTooltipData;
     return (

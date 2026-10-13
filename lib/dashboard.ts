@@ -8,54 +8,8 @@ import {
   invalidateProjectCaches,
 } from "./redis";
 
-export interface ProjectRecord {
-  id: string;
-  name: string;
-  description?: string | null;
-  user_id?: string;
-  status?: string | null;
-  deployment_url?: string | null;
-  hosting_project_name?: string | null;
-  current_version?: number | null;
-  last_deployed_at?: string | null;
-  created_at?: string;
-  updated_at: string;
-}
-
-export interface DeploymentRecord {
-  id: string;
-  project_id: string;
-  project_name: string;
-  user_id: string;
-  deployment_id: string;
-  hosting_project_name?: string | null;
-  url: string;
-  environment: string;
-  status: "success" | "failed" | "in_progress";
-  source_version?: number | null;
-  duration_ms?: number | null;
-  error_message?: string | null;
-  created_at: string;
-}
-
-export interface ProjectDistributionItem {
-  name: "Deployed" | "Draft";
-  value: number;
-  color: string;
-  percentage: number;
-}
-
-export interface DashboardStats {
-  totalProjects: number;
-  deployedProjects: number;
-  draftProjects: number;
-  failedDeployments: number;
-  totalDeployments: number;
-  projectDistribution: ProjectDistributionItem[];
-  deploymentsTimeline: { date: string; name: string; success: number; failed: number }[];
-  recentProjects: ProjectRecord[];
-  recentDeployments: DeploymentRecord[];
-}
+export * from "./version-display";
+import type { ProjectRecord, DeploymentRecord, DashboardStats, ProjectDistributionItem } from "./version-display";
 
 /**
  * Fetches user deployment records from Supabase with project info.
@@ -88,7 +42,7 @@ export async function getUserDeployments(
     // Fetch user projects to guarantee ownership & project names
     const { data: fetchedProjects, error: projErr } = await supabase
       .from("projects")
-      .select("id, name, status, deployment_url, hosting_project_name, last_deployed_at, updated_at")
+      .select("*")
       .eq("user_id", userId);
 
     if (projErr || !fetchedProjects || fetchedProjects.length === 0) {
@@ -162,7 +116,7 @@ export async function getUserDeployments(
       url: p.deployment_url || `https://${p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${p.id.slice(0, 8)}.pages.dev`,
       environment: "production",
       status: "success",
-      source_version: 1,
+      source_version: typeof p.last_deployed_version === "number" ? p.last_deployed_version : (typeof p.current_version === "number" ? p.current_version : null),
       duration_ms: null,
       error_message: null,
       created_at: p.last_deployed_at || p.updated_at,
@@ -209,9 +163,10 @@ export async function getUserDashboardStats(
   }
 
   // Fetch user projects
+  // Fetch user projects with all persisted columns
   const { data: projects, error: projErr } = await supabase
     .from("projects")
-    .select("id, name, status, description, deployment_url, hosting_project_name, last_deployed_at, created_at, updated_at")
+    .select("*")
     .eq("user_id", userId)
     .order("updated_at", { ascending: false });
 
@@ -233,6 +188,87 @@ export async function getUserDashboardStats(
   const allDeployments = await getUserDeployments(supabase, userId, { projects: allProjects });
   const totalDeployments = allDeployments.length;
   const failedDeployments = allDeployments.filter((d) => d.status === "failed").length;
+
+  // 1. Establish precise production versions from genuine deployment records
+  const latestSuccessDeploysByProject = new Map<string, number>();
+  for (const dep of allDeployments) {
+    if (dep.status === "success" && typeof dep.source_version === "number" && dep.source_version > 0) {
+      if (!latestSuccessDeploysByProject.has(dep.project_id)) {
+        latestSuccessDeploysByProject.set(dep.project_id, dep.source_version);
+      }
+    }
+  }
+
+  for (const p of allProjects) {
+    const verifiedProdVer = latestSuccessDeploysByProject.get(p.id);
+    if (verifiedProdVer) {
+      p.last_deployed_version = verifiedProdVer;
+    } else if (p.last_deployed_version === undefined) {
+      p.last_deployed_version = null;
+    }
+  }
+
+  // 2. Batch-resolve draft/working versions for projects if current_version is not populated
+  const projectsNeedingDraftVer = allProjects.filter(
+    (p) => p.current_version === undefined || p.current_version === null
+  );
+
+  if (projectsNeedingDraftVer.length > 0) {
+    const pids = projectsNeedingDraftVer.map((p) => p.id);
+    let resolvedMap = new Map<string, number>();
+
+    try {
+      const { data: verRows } = await supabase
+        .from("project_versions")
+        .select("project_id, version_number")
+        .in("project_id", pids)
+        .order("version_number", { ascending: false });
+
+      if (verRows && verRows.length > 0) {
+        for (const row of verRows) {
+          if (!resolvedMap.has(row.project_id) && typeof row.version_number === "number") {
+            resolvedMap.set(row.project_id, row.version_number);
+          }
+        }
+      }
+    } catch {
+      // Table may not exist; try generation_history fallback
+    }
+
+    if (resolvedMap.size < projectsNeedingDraftVer.length) {
+      try {
+        const { data: histRows } = await supabase
+          .from("generation_history")
+          .select("project_id, error_message")
+          .in("project_id", pids)
+          .eq("status", "version_snapshot")
+          .order("created_at", { ascending: false });
+
+        if (histRows && histRows.length > 0) {
+          for (const row of histRows) {
+            if (row.error_message && !resolvedMap.has(row.project_id)) {
+              try {
+                const parsed = JSON.parse(row.error_message);
+                if (parsed && typeof parsed.version_number === "number") {
+                  resolvedMap.set(row.project_id, parsed.version_number);
+                }
+              } catch {
+                // ignore
+              }
+            }
+          }
+        }
+      } catch {
+        // Non-critical fallback
+      }
+    }
+
+    for (const p of projectsNeedingDraftVer) {
+      if (resolvedMap.has(p.id)) {
+        p.current_version = resolvedMap.get(p.id)!;
+      }
+    }
+  }
 
   // Real Project Distribution Chart Data
   const total = deployedProjects + draftProjects;

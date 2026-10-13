@@ -170,7 +170,9 @@ function createMockSupabase() {
 
 async function runTests() {
   const mockSupabase = createMockSupabase();
-  const userId = "user-1";
+  const userId = `user-unit-${Date.now()}`;
+  mockSupabase.store.projects.forEach((p) => { if (p.user_id === "user-1") p.user_id = userId; });
+  mockSupabase.store.deployments.forEach((d) => { if (d.user_id === "user-1") d.user_id = userId; });
 
   // Test 1: Dynamic Deploy / Re-Deploy distinction based on persisted database state
   console.log("Test 1: Verifying Deploy vs Re-Deploy identification...");

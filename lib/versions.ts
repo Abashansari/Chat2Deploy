@@ -202,7 +202,46 @@ export async function createVersionSnapshot({
     console.error("[versions] Fallback snapshot save error:", fallbackErr);
   }
 
+  // Update projects table current_version in fallback mode as well
+  try {
+    await supabase
+      .from("projects")
+      .update({ current_version: nextVersionNumber, updated_at: new Date().toISOString() })
+      .eq("id", projectId);
+  } catch {
+    // Non-critical if column doesn't exist
+  }
+
   return fallbackRecord;
+}
+
+/**
+ * Resolves the actual current working/draft version of a project from real database records.
+ * Returns null if no version record exists (never invents a version number).
+ */
+export async function resolveProjectWorkingVersion({
+  supabase,
+  projectId,
+  knownCurrentVersion,
+}: {
+  supabase: SupabaseClient;
+  projectId: string;
+  knownCurrentVersion?: number | null;
+}): Promise<number | null> {
+  if (typeof knownCurrentVersion === "number" && knownCurrentVersion > 0) {
+    return knownCurrentVersion;
+  }
+
+  try {
+    const versions = await getProjectVersionsList({ supabase, projectId });
+    if (versions && versions.length > 0) {
+      return versions[0].version_number;
+    }
+  } catch {
+    // Non-critical
+  }
+
+  return null;
 }
 
 /**

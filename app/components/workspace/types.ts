@@ -6,6 +6,7 @@ export interface DeploymentDetails {
   url: string;
   id: string;
   timestamp: string;
+  version?: number | null;
 }
 
 export type ChatMessage = {

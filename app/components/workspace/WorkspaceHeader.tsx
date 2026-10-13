@@ -77,6 +77,11 @@ export default function WorkspaceHeader({
             >
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
               Live: {deploymentDetails.url.replace(/^https?:\/\//, "")}
+              {typeof deploymentDetails.version === "number" && deploymentDetails.version > 0 && (
+                <span className="font-mono text-[10px] font-bold bg-emerald-500/20 px-1.5 py-0.2 rounded border border-emerald-500/30">
+                  v{deploymentDetails.version}
+                </span>
+              )}
               <ExternalLink size={12} />
             </a>
           )}

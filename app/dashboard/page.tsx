@@ -47,7 +47,14 @@ import {
 } from "lucide-react";
 import { useAuth } from "../components/auth/AuthProvider";
 import { createClient } from "@/lib/supabase/client";
-import type { DeploymentRecord, DashboardStats, ProjectRecord } from "@/lib/dashboard";
+import {
+  getActiveProductionVersion,
+  getWorkingDraftVersion,
+  formatVersionDisplay,
+  type DeploymentRecord,
+  type DashboardStats,
+  type ProjectRecord,
+} from "@/lib/version-display";
 import { ProjectStatusChart } from "../components/dashboard/ProjectStatusChart";
 
 type DashboardTab = "overview" | "projects" | "deployments" | "analytics" | "settings" | "resources";
@@ -139,7 +146,7 @@ export default function DashboardPage() {
         // Fallback to direct supabase query if API is unavailable
         const { data: fallbackProjects } = await supabase
           .from("projects")
-          .select("id, name, status, description, deployment_url, hosting_project_name, last_deployed_at, created_at, updated_at")
+          .select("*")
           .eq("user_id", userId)
           .order("updated_at", { ascending: false });
         if (fallbackProjects) setProjects(fallbackProjects as ProjectRecord[]);
@@ -754,6 +761,12 @@ export default function DashboardPage() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       {projects.slice(0, 3).map((p) => {
                         const isDeployed = p.status?.toLowerCase() === "published" || !!p.deployment_url;
+                        const prodVersion = getActiveProductionVersion(p, deployments);
+                        const workingVersion = getWorkingDraftVersion(p);
+                        const displayVersion = isDeployed
+                          ? (prodVersion ? `v${prodVersion}` : "Version unavailable")
+                          : (workingVersion ? `v${workingVersion}` : "Version unavailable");
+
                         return (
                           <div key={p.id} className="bg-card border border-subtle rounded-xl p-4 flex flex-col justify-between hover:shadow-xs transition-shadow">
                             <div>
@@ -763,8 +776,15 @@ export default function DashboardPage() {
                                 }`}>
                                   {isDeployed ? "Published" : "Draft"}
                                 </span>
-                                <span className="text-[11px] text-muted flex items-center gap-1 font-mono">
-                                  v{p.current_version || 1}
+                                <span
+                                  className="text-[11px] text-muted flex items-center gap-1 font-mono"
+                                  title={
+                                    isDeployed
+                                      ? `Production: ${displayVersion}${workingVersion && prodVersion && workingVersion !== prodVersion ? ` · Draft: v${workingVersion}` : ""}`
+                                      : `Draft: ${displayVersion}`
+                                  }
+                                >
+                                  {displayVersion}
                                 </span>
                               </div>
                               <h3 className="font-bold text-foreground text-base truncate">{p.name}</h3>
@@ -859,17 +879,27 @@ export default function DashboardPage() {
                     {filteredProjects.map((p) => {
                       const isDeployed = p.status?.toLowerCase() === "published" || !!p.deployment_url;
                       const isDeployingThis = deployingProjectId === p.id;
+                      const prodVersion = getActiveProductionVersion(p, deployments);
+                      const workingVersion = getWorkingDraftVersion(p);
+                      const topDisplayVersion = isDeployed
+                        ? (prodVersion ? `v${prodVersion}` : "Version unavailable")
+                        : (workingVersion ? `v${workingVersion}` : "Version unavailable");
 
                       return (
                         <div key={p.id} className="bg-card border border-subtle rounded-xl p-5 hover:border-subtle/80 hover:shadow-xs transition-all flex flex-col justify-between">
                           <div>
                             {/* Card Header */}
                             <div className="flex items-start justify-between gap-2 mb-3">
-                              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                                isDeployed ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" : "bg-surface text-muted border border-subtle"
-                              }`}>
-                                {isDeployed ? "Published" : "Draft"}
-                              </span>
+                              <div className="flex items-center gap-2">
+                                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                                  isDeployed ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" : "bg-surface text-muted border border-subtle"
+                                }`}>
+                                  {isDeployed ? "Published" : "Draft"}
+                                </span>
+                                <span className="text-[11px] font-mono text-muted">
+                                  {topDisplayVersion}
+                                </span>
+                              </div>
 
                               <div className="flex items-center gap-1">
                                 <button
@@ -900,10 +930,29 @@ export default function DashboardPage() {
 
                             {/* Metadata */}
                             <div className="space-y-1.5 text-[11px] text-muted pt-3 border-t border-subtle">
-                              <div className="flex items-center justify-between">
-                                <span>Version:</span>
-                                <span className="font-mono font-semibold text-foreground">v{p.current_version || 1}</span>
-                              </div>
+                              {isDeployed ? (
+                                <>
+                                  <div className="flex items-center justify-between">
+                                    <span>Production Version:</span>
+                                    <span className="font-mono font-semibold text-emerald-500">
+                                      {prodVersion ? `v${prodVersion}` : "Version unavailable"}
+                                    </span>
+                                  </div>
+                                  {workingVersion && prodVersion && workingVersion !== prodVersion && (
+                                    <div className="flex items-center justify-between">
+                                      <span>Draft Version:</span>
+                                      <span className="font-mono text-muted">v{workingVersion}</span>
+                                    </div>
+                                  )}
+                                </>
+                              ) : (
+                                <div className="flex items-center justify-between">
+                                  <span>Working Version:</span>
+                                  <span className="font-mono font-semibold text-foreground">
+                                    {workingVersion ? `v${workingVersion}` : "Version unavailable"}
+                                  </span>
+                                </div>
+                              )}
                               <div className="flex items-center justify-between">
                                 <span>Updated:</span>
                                 <span>{new Date(p.updated_at).toLocaleDateString()}</span>
@@ -1095,8 +1144,10 @@ export default function DashboardPage() {
                                   )}
                                 </td>
 
-                                <td className="py-3.5 px-4 font-mono text-muted">
-                                  {d.source_version ? `v${d.source_version}` : "-"}
+                                <td className="py-3.5 px-4 font-mono text-muted text-xs">
+                                  {typeof d.source_version === "number" && d.source_version > 0
+                                    ? `v${d.source_version}`
+                                    : "Version unavailable"}
                                 </td>
 
                                 <td className="py-3.5 px-4 font-mono text-muted">

@@ -46,7 +46,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ projectId:
         supabase.from("chat_history").select("*").eq("project_id", projectId).order("created_at", { ascending: true }),
         supabase.from("project_files").select("id").eq("project_id", projectId).limit(1),
         fetch(`/api/versions?projectId=${encodeURIComponent(projectId)}`).then((r) => (r.ok ? r.json() : null)).catch(() => null),
-        supabase.from("deployments").select("deployment_id, url, created_at, status").eq("project_id", projectId).eq("status", "success").order("created_at", { ascending: false }).limit(1),
+        supabase.from("deployments").select("deployment_id, url, created_at, status, source_version").eq("project_id", projectId).eq("status", "success").order("created_at", { ascending: false }).limit(1),
       ]);
 
       const project = projResult.data;
@@ -92,6 +92,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ projectId:
           url: deployRecords[0].url,
           id: deployRecords[0].deployment_id,
           timestamp: deployRecords[0].created_at,
+          version: typeof deployRecords[0].source_version === "number" ? deployRecords[0].source_version : (typeof project.last_deployed_version === "number" ? project.last_deployed_version : null),
         };
       } else if (project.deployment_url || project.status === "published") {
         existingDeployDetails = {
@@ -100,6 +101,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ projectId:
             `https://${project.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${project.id.slice(0, 8)}.pages.dev`,
           id: project.hosting_project_name || project.id.slice(0, 8),
           timestamp: project.last_deployed_at || project.updated_at,
+          version: typeof project.last_deployed_version === "number" ? project.last_deployed_version : null,
         };
       }
 
@@ -253,6 +255,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ projectId:
         url: data.deploymentUrl,
         id: data.deploymentId,
         timestamp: data.timestamp,
+        version: typeof data.sourceVersion === "number" ? data.sourceVersion : currentVersionNumber,
       });
       setDeploymentStatus("success");
     } catch (err: unknown) {

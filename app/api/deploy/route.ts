@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { deployToCloudflarePages, DeploymentError } from "@/lib/cloudflare";
 import { invalidateProjectCaches, invalidateUserDeployments } from "@/lib/redis";
+import { resolveProjectWorkingVersion } from "@/lib/versions";
 
 export async function POST(request: Request) {
   try {
@@ -90,33 +91,35 @@ export async function POST(request: Request) {
     let deploymentUrl: string | null = null;
     let currentVersionNum = 1;
 
+    let extendedProjectRecord: Record<string, unknown> | null = null;
     try {
-      const { data: extendedProject } = await supabase
+      const { data: extProj } = await supabase
         .from("projects")
-        .select("hosting_project_name, deployment_url, current_version, last_deployed_at, last_deployment_status, last_deployed_version")
+        .select("*")
         .eq("id", projectId)
         .single();
 
-      if (extendedProject) {
-        hostingProjectName = extendedProject.hosting_project_name || null;
-        deploymentUrl = extendedProject.deployment_url || null;
-        currentVersionNum = extendedProject.current_version || 1;
+      if (extProj) {
+        extendedProjectRecord = extProj;
+        hostingProjectName = extProj.hosting_project_name || null;
+        deploymentUrl = extProj.deployment_url || null;
+        if (typeof extProj.current_version === "number" && extProj.current_version > 0) {
+          currentVersionNum = extProj.current_version;
+        }
       }
     } catch {
-      // Columns don't exist yet — that's okay, use defaults
       console.info("[/api/deploy] Extended deployment columns not available; using defaults.");
     }
 
-    // Also try to get the latest version number from project_versions table
+    // Resolve exact source version from project_versions or generation_history
     try {
-      const { data: latestVer } = await supabase
-        .from("project_versions")
-        .select("version_number")
-        .eq("project_id", projectId)
-        .order("version_number", { ascending: false })
-        .limit(1);
-      if (latestVer && latestVer.length > 0) {
-        currentVersionNum = latestVer[0].version_number;
+      const resolvedVersion = await resolveProjectWorkingVersion({
+        supabase,
+        projectId,
+        knownCurrentVersion: extendedProjectRecord?.current_version as number | undefined,
+      });
+      if (resolvedVersion && resolvedVersion > 0) {
+        currentVersionNum = resolvedVersion;
       }
     } catch {
       // Non-critical fallback
