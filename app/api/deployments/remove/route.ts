@@ -17,7 +17,7 @@ export async function POST(request: Request) {
     }
 
     // 2. Parse request body
-    let body: any;
+    let body: Record<string, unknown> | undefined;
     try {
       body = await request.json();
     } catch {

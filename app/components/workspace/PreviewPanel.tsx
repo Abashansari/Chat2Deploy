@@ -14,7 +14,6 @@ import {
   Rocket,
   CheckCircle2,
   ExternalLink,
-  Layers,
   ArrowUpRight,
   History,
 } from "lucide-react";
@@ -65,21 +64,21 @@ export default function PreviewPanel({
   onOpenHistory,
 }: PreviewPanelProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const [iframeKey, setIframeKey] = useState(0);
+  const [localRefreshKey, setLocalRefreshKey] = useState(0);
   const [deployMessageIndex, setDeployMessageIndex] = useState(0);
 
   // Cycle rotating messages while deploying
   useEffect(() => {
-    if (deploymentStatus !== "deploying") {
-      setDeployMessageIndex(0);
-      return;
-    }
+    if (deploymentStatus !== "deploying") return;
 
     const interval = setInterval(() => {
       setDeployMessageIndex((prev) => (prev + 1) % ROTATING_DEPLOY_MESSAGES.length);
     }, 2800);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      setDeployMessageIndex(0);
+    };
   }, [deploymentStatus]);
 
   const getPreviewWidth = () => {
@@ -96,13 +95,8 @@ export default function PreviewPanel({
   };
 
   const handleRefresh = useCallback(() => {
-    setIframeKey((k) => k + 1);
+    setLocalRefreshKey((k) => k + 1);
   }, []);
-
-  // Sync internal iframeKey with parent's refreshKey
-  useEffect(() => {
-    setIframeKey(refreshKey);
-  }, [refreshKey]);
 
   const getStatusBadge = () => {
     if (deploymentStatus === "deploying") {
@@ -415,7 +409,7 @@ export default function PreviewPanel({
             ) : previewUrl ? (
               /* Generated website via sandboxed iframe */
               <iframe
-                key={iframeKey}
+                key={`${refreshKey}-${localRefreshKey}`}
                 ref={iframeRef}
                 src={previewUrl}
                 sandbox="allow-scripts allow-same-origin"

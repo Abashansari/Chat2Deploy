@@ -62,10 +62,10 @@ export default function WorkspacePage({ params }: { params: Promise<{ projectId:
       const chats = chatsResult.data;
       if (chats && chats.length > 0) {
         setMessages(
-          chats.map((c: any) => ({
-            id: c.id,
-            role: c.role,
-            content: c.content,
+          chats.map((c: Record<string, unknown>) => ({
+            id: String(c.id),
+            role: c.role as "user" | "assistant",
+            content: String(c.content || ""),
             status: c.role === "assistant" ? "ready" : undefined,
           }))
         );
@@ -125,7 +125,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ projectId:
     }
     loadedProjectIdRef.current = projectId;
     loadProjectData();
-  }, [user?.id, isAuthLoading, projectId, loadProjectData, router]);
+  }, [user, isAuthLoading, projectId, loadProjectData, router]);
 
 
   const handleVersionRestored = useCallback((newVersionNumber: number, restoredFromNumber: number) => {

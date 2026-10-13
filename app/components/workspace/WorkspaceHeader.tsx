@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Rocket, Loader2, CheckCircle2, ExternalLink, AlertCircle, X, Globe, History } from "lucide-react";
+import { Rocket, Loader2, CheckCircle2, ExternalLink, AlertCircle, X, History } from "lucide-react";
 import { ThemeToggle } from "../ThemeToggle";
 import { AuthAwareBackButton } from "../auth/AuthAwareBackButton";
 import type { DeploymentStatus, DeploymentDetails } from "./types";
@@ -17,7 +17,7 @@ interface WorkspaceHeaderProps {
 }
 
 export default function WorkspaceHeader({
-  projectId,
+  projectId: _projectId,
   hasFiles,
   currentVersionNumber,
   deploymentStatus = "idle",
@@ -25,6 +25,7 @@ export default function WorkspaceHeader({
   onDeploy,
   onOpenHistory,
 }: WorkspaceHeaderProps) {
+  void _projectId;
   const [internalError, setInternalError] = useState<string | null>(null);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
 

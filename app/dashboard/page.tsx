@@ -24,8 +24,6 @@ import {
   Settings,
   BookOpen,
   Plus,
-  Globe,
-  Clock,
   Menu,
   X,
   User as UserIcon,
@@ -40,15 +38,17 @@ import {
   CheckCircle2,
   AlertCircle,
   Search,
-  Filter,
   ShieldAlert,
   ArrowUpRight,
   RefreshCw,
-  History,
+  Server,
+  Zap,
+  Database,
 } from "lucide-react";
 import { useAuth } from "../components/auth/AuthProvider";
 import { createClient } from "@/lib/supabase/client";
-import type { DeploymentRecord, DashboardStats } from "@/lib/dashboard";
+import type { DeploymentRecord, DashboardStats, ProjectRecord } from "@/lib/dashboard";
+import { ProjectStatusChart } from "../components/dashboard/ProjectStatusChart";
 
 type DashboardTab = "overview" | "projects" | "deployments" | "analytics" | "settings" | "resources";
 
@@ -61,10 +61,11 @@ export default function DashboardPage() {
   const supabase = createClient();
 
   // Core Data States
-  const [projects, setProjects] = useState<any[]>([]);
+  const [projects, setProjects] = useState<ProjectRecord[]>([]);
   const [deployments, setDeployments] = useState<DeploymentRecord[]>([]);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [statsError, setStatsError] = useState<string | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // Modals & Dialogs
@@ -73,12 +74,12 @@ export default function DashboardPage() {
   const [isCreating, setIsCreating] = useState(false);
 
   // Rename Dialog
-  const [renameTarget, setRenameTarget] = useState<any | null>(null);
+  const [renameTarget, setRenameTarget] = useState<ProjectRecord | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const [isRenaming, setIsRenaming] = useState(false);
 
   // Delete Project Dialog
-  const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ProjectRecord | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
@@ -86,6 +87,9 @@ export default function DashboardPage() {
   const [removeDeployTarget, setRemoveDeployTarget] = useState<DeploymentRecord | null>(null);
   const [isRemovingDeploy, setIsRemovingDeploy] = useState(false);
   const [removeDeployError, setRemoveDeployError] = useState<string | null>(null);
+
+  // Cache Purge State
+  const [isPurgingCache, setIsPurgingCache] = useState(false);
 
   // Inline Deploy Action State (e.g. triggering redeploy from dashboard)
   const [deployingProjectId, setDeployingProjectId] = useState<string | null>(null);
@@ -105,6 +109,8 @@ export default function DashboardPage() {
     const userId = user?.id;
     if (!userId) return;
 
+    setStatsError(null);
+
     try {
       const [projData, depData, statsData] = await Promise.all([
         fetch("/api/projects")
@@ -114,8 +120,17 @@ export default function DashboardPage() {
           .then((r) => (r.ok ? r.json() : { deployments: [] }))
           .catch(() => ({ deployments: [] })),
         fetch("/api/dashboard/stats")
-          .then((r) => (r.ok ? r.json() : { stats: null }))
-          .catch(() => ({ stats: null })),
+          .then(async (r) => {
+            if (!r.ok) {
+              const err = await r.json().catch(() => ({}));
+              throw new Error(err.error || `HTTP ${r.status}`);
+            }
+            return r.json();
+          })
+          .catch((err: unknown) => ({
+            error: err instanceof Error ? err.message : "Failed to load stats",
+            stats: null,
+          })),
       ]);
 
       if (projData?.projects) {
@@ -124,23 +139,43 @@ export default function DashboardPage() {
         // Fallback to direct supabase query if API is unavailable
         const { data: fallbackProjects } = await supabase
           .from("projects")
-          .select("*")
+          .select("id, name, status, description, deployment_url, hosting_project_name, last_deployed_at, created_at, updated_at")
           .eq("user_id", userId)
           .order("updated_at", { ascending: false });
-        if (fallbackProjects) setProjects(fallbackProjects);
+        if (fallbackProjects) setProjects(fallbackProjects as ProjectRecord[]);
       }
 
       setDeployments(depData.deployments || []);
       if (statsData.stats) {
         setStats(statsData.stats);
+        setStatsError(null);
+      } else if (statsData.error) {
+        setStatsError(statsData.error);
       }
       hasLoadedOnceRef.current = true;
     } catch (err) {
       console.error("[Dashboard] Error loading dashboard data:", err);
+      setStatsError(err instanceof Error ? err.message : "Error loading dashboard metrics");
     } finally {
       setIsLoading(false);
     }
   }, [user?.id, supabase]);
+
+  // Authoritative Derived Metric Counts
+  const deployedCount = useMemo(() => {
+    if (stats?.deployedProjects !== undefined) return stats.deployedProjects;
+    return projects.filter((p) => p.status?.toLowerCase() === "published" || !!p.deployment_url).length;
+  }, [stats?.deployedProjects, projects]);
+
+  const draftCount = useMemo(() => {
+    if (stats?.draftProjects !== undefined) return stats.draftProjects;
+    return Math.max(0, projects.length - deployedCount);
+  }, [stats?.draftProjects, projects.length, deployedCount]);
+
+  const totalCount = useMemo(() => {
+    if (stats?.totalProjects !== undefined) return stats.totalProjects;
+    return projects.length;
+  }, [stats?.totalProjects, projects.length]);
 
   useEffect(() => {
     if (user?.id) {
@@ -319,6 +354,26 @@ export default function DashboardPage() {
     }
   };
 
+  // Cache Purge Action (Refreshes server-side Redis cache on demand)
+  const handlePurgeCache = async () => {
+    if (isPurgingCache) return;
+    setIsPurgingCache(true);
+    try {
+      const res = await fetch("/api/dashboard/purge", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to purge cache.");
+      }
+      showNotification(data.message || "Cache successfully purged. Live data re-synced.");
+      setRefreshTrigger((t) => t + 1);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to purge cache.";
+      showNotification(msg, "error");
+    } finally {
+      setIsPurgingCache(false);
+    }
+  };
+
   // Filtered Projects List
   const filteredProjects = useMemo(() => {
     return projects.filter((p) => {
@@ -338,9 +393,9 @@ export default function DashboardPage() {
     });
   }, [projects, projectSearch, projectStatusFilter]);
 
-  // Filtered Deployments List
+  // Filtered & Sorted Deployments List
   const filteredDeployments = useMemo(() => {
-    return deployments.filter((d) => {
+    const list = deployments.filter((d) => {
       const matchesSearch =
         d.project_name.toLowerCase().includes(deploymentSearch.toLowerCase()) ||
         d.url.toLowerCase().includes(deploymentSearch.toLowerCase()) ||
@@ -351,7 +406,17 @@ export default function DashboardPage() {
 
       return matchesSearch && matchesStatus;
     });
-  }, [deployments, deploymentSearch, deploymentStatusFilter]);
+
+    return [...list].sort((a, b) => {
+      if (deploymentSort === "name") {
+        return a.project_name.localeCompare(b.project_name);
+      }
+      if (deploymentSort === "oldest") {
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      }
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+  }, [deployments, deploymentSearch, deploymentStatusFilter, deploymentSort]);
 
   const navigation = [
     { name: "Overview", id: "overview" as DashboardTab, icon: LayoutDashboard },
@@ -441,7 +506,7 @@ export default function DashboardPage() {
               <div className="absolute bottom-full left-4 right-4 mb-2 bg-card border border-subtle rounded-xl shadow-lg z-50 overflow-hidden flex flex-col">
                 <div className="p-3 border-b border-subtle">
                   <p className="text-sm font-medium text-foreground truncate">
-                    {(user as any)?.user_metadata?.full_name || user?.name || user?.email}
+                    {user?.name || user?.email}
                   </p>
                   <p className="text-xs text-muted truncate">{user?.email}</p>
                 </div>
@@ -478,7 +543,7 @@ export default function DashboardPage() {
                 <UserIcon size={16} className="text-muted" />
               </div>
               <p className="text-sm font-medium text-foreground truncate">
-                {(user as any)?.user_metadata?.full_name || user?.name || user?.email}
+                {user?.name || user?.email}
               </p>
             </button>
           </div>
@@ -523,7 +588,7 @@ export default function DashboardPage() {
                 </h1>
                 <p className="text-muted text-sm md:text-base mt-1">
                   {activeTab === "overview" && "Live metrics, project management, and edge deployments."}
-                  {activeTab === "projects" && "Manage, rename,setting deploy, and inspect your AI-generated websites."}
+                  {activeTab === "projects" && "Manage, rename, deploy, and inspect your AI-generated websites."}
                   {activeTab === "deployments" && "Monitor live edge websites, deployment outcomes, and URLs."}
                   {activeTab === "analytics" && "Real application statistics derived from your project database."}
                   {activeTab === "settings" && "Account configuration and hosting infrastructure overview."}
@@ -954,7 +1019,7 @@ export default function DashboardPage() {
                     {/* Sort Dropdown */}
                     <select
                       value={deploymentSort}
-                      onChange={(e) => setDeploymentSort(e.target.value as any)}
+                      onChange={(e) => setDeploymentSort(e.target.value as "newest" | "oldest" | "name")}
                       className="bg-surface border border-subtle rounded-lg px-2.5 py-1.5 text-xs text-foreground focus:outline-none"
                     >
                       <option value="newest">Newest First</option>
@@ -1239,7 +1304,7 @@ export default function DashboardPage() {
                     <div className="p-3 bg-surface border border-subtle rounded-lg">
                       <p className="text-muted mb-0.5">Full Name</p>
                       <p className="font-semibold text-foreground">
-                        {(user as any)?.user_metadata?.full_name || user?.name || "Not configured"}
+                        {user?.name || "Not configured"}
                       </p>
                     </div>
                     <div className="p-3 bg-surface border border-subtle rounded-lg">
@@ -1258,6 +1323,7 @@ export default function DashboardPage() {
                     </div>
                   </div>
                 </div>
+
               </div>
             )}
 

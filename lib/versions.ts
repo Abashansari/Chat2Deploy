@@ -211,12 +211,13 @@ export async function createVersionSnapshot({
 export async function getProjectVersionsList({
   supabase,
   projectId,
-  userId,
+  userId: _userId,
 }: {
   supabase: SupabaseClient;
   projectId: string;
   userId?: string;
 }): Promise<VersionSummary[]> {
+  void _userId;
   // 1. Try public.project_versions
   try {
     const { data, error } = await supabase
@@ -226,8 +227,9 @@ export async function getProjectVersionsList({
       .order("version_number", { ascending: false });
 
     if (!error && data && data.length > 0) {
-      const highestVersion = Math.max(...data.map((d: any) => d.version_number));
-      return data.map((d: any) => ({
+      const records = data as unknown as VersionSummary[];
+      const highestVersion = Math.max(...records.map((d) => d.version_number));
+      return records.map((d) => ({
         id: d.id,
         project_id: d.project_id,
         version_number: d.version_number,
@@ -302,7 +304,7 @@ export async function getProjectVersionsList({
 export async function getProjectVersionByNumber({
   supabase,
   projectId,
-  userId,
+  userId: _userId,
   versionNumber,
 }: {
   supabase: SupabaseClient;
@@ -310,6 +312,7 @@ export async function getProjectVersionByNumber({
   userId?: string;
   versionNumber: number;
 }): Promise<ProjectVersion | null> {
+  void _userId;
   // 1. Try public.project_versions
   try {
     const { data, error } = await supabase

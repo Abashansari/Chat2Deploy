@@ -105,7 +105,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [user, isLoading, pathname, router]);
 
-  const login = useCallback((_userData: { name: string; email: string }) => {
+  const login = useCallback((_userData?: { name: string; email: string }) => {
+    void _userData;
     // Kept for backwards compatibility; onAuthStateChange handles state updates
   }, []);
 

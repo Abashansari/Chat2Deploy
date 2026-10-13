@@ -66,7 +66,7 @@ export async function PATCH(
     }
 
     // 2. Parse request body
-    let body: any;
+    let body: Record<string, unknown> | undefined;
     try {
       body = await request.json();
     } catch {

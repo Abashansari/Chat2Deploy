@@ -710,7 +710,7 @@ ${filesContext}`;
     });
   }
 
-  let parsed: any;
+  let parsed: Record<string, unknown>;
   try {
     parsed = JSON.parse(text);
   } catch (parseErr) {
@@ -745,8 +745,8 @@ ${filesContext}`;
   }
 
   return {
-    title: parsed.title || "Modified Website",
-    description: parsed.description || "Website modification applied",
+    title: typeof parsed.title === "string" ? parsed.title : "Modified Website",
+    description: typeof parsed.description === "string" ? parsed.description : "Website modification applied",
     files: newFiles,
     modelUsed,
   };

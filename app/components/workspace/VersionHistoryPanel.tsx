@@ -72,7 +72,7 @@ export default function VersionHistoryPanel({
 
   useEffect(() => {
     if (isOpen) {
-      fetchVersions();
+      fetchVersions(); // eslint-disable-line react-hooks/set-state-in-effect
     }
   }, [isOpen, refreshTrigger, fetchVersions]);
 

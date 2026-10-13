@@ -8,6 +8,20 @@ import {
   invalidateProjectCaches,
 } from "./redis";
 
+export interface ProjectRecord {
+  id: string;
+  name: string;
+  description?: string | null;
+  user_id?: string;
+  status?: string | null;
+  deployment_url?: string | null;
+  hosting_project_name?: string | null;
+  current_version?: number | null;
+  last_deployed_at?: string | null;
+  created_at?: string;
+  updated_at: string;
+}
+
 export interface DeploymentRecord {
   id: string;
   project_id: string;
@@ -24,15 +38,22 @@ export interface DeploymentRecord {
   created_at: string;
 }
 
+export interface ProjectDistributionItem {
+  name: "Deployed" | "Draft";
+  value: number;
+  color: string;
+  percentage: number;
+}
+
 export interface DashboardStats {
   totalProjects: number;
   deployedProjects: number;
   draftProjects: number;
   failedDeployments: number;
   totalDeployments: number;
-  projectDistribution: { name: string; value: number; color: string }[];
+  projectDistribution: ProjectDistributionItem[];
   deploymentsTimeline: { date: string; name: string; success: number; failed: number }[];
-  recentProjects: any[];
+  recentProjects: ProjectRecord[];
   recentDeployments: DeploymentRecord[];
 }
 
@@ -46,7 +67,7 @@ export async function getUserDeployments(
     search?: string;
     status?: string;
     sort?: "newest" | "oldest" | "name";
-    projects?: any[];
+    projects?: ProjectRecord[];
   } = {}
 ): Promise<DeploymentRecord[]> {
   const { search = "", status = "all", sort = "newest", projects: passedProjects } = options;
@@ -73,14 +94,14 @@ export async function getUserDeployments(
     if (projErr || !fetchedProjects || fetchedProjects.length === 0) {
       return [];
     }
-    userProjects = fetchedProjects;
+    userProjects = fetchedProjects as ProjectRecord[];
   }
 
   if (userProjects.length === 0) {
     return [];
   }
 
-  const projectMap = new Map<string, any>(userProjects.map((p) => [p.id, p]));
+  const projectMap = new Map<string, ProjectRecord>(userProjects.map((p) => [p.id, p]));
   const projectIds = userProjects.map((p) => p.id);
 
   // 2. Fetch records from public.deployments
@@ -101,22 +122,23 @@ export async function getUserDeployments(
     });
 
     if (!depErr && rawDeployments && rawDeployments.length > 0) {
-      deployments = rawDeployments.map((d: any) => {
-        const proj = projectMap.get(d.project_id);
+      deployments = rawDeployments.map((d: Record<string, unknown>) => {
+        const proj = projectMap.get(String(d.project_id));
+        const statusVal = String(d.status || "").toLowerCase() === "failed" ? "failed" : "success";
         return {
-          id: d.id,
-          project_id: d.project_id,
+          id: String(d.id),
+          project_id: String(d.project_id),
           project_name: proj?.name || "Untitled Project",
-          user_id: d.user_id,
-          deployment_id: d.deployment_id,
-          hosting_project_name: d.hosting_project_name || proj?.hosting_project_name,
-          url: d.url,
-          environment: d.environment || "production",
-          status: (d.status?.toLowerCase() === "failed" ? "failed" : "success") as any,
-          source_version: d.source_version,
-          duration_ms: d.duration_ms,
-          error_message: d.error_message,
-          created_at: d.created_at,
+          user_id: String(d.user_id),
+          deployment_id: String(d.deployment_id),
+          hosting_project_name: d.hosting_project_name ? String(d.hosting_project_name) : proj?.hosting_project_name,
+          url: String(d.url || ""),
+          environment: String(d.environment || "production"),
+          status: statusVal as "success" | "failed",
+          source_version: typeof d.source_version === "number" ? d.source_version : null,
+          duration_ms: typeof d.duration_ms === "number" ? d.duration_ms : null,
+          error_message: d.error_message ? String(d.error_message) : null,
+          created_at: String(d.created_at || new Date().toISOString()),
         };
       });
     }
@@ -187,13 +209,18 @@ export async function getUserDashboardStats(
   }
 
   // Fetch user projects
-  const { data: projects = [] } = await supabase
+  const { data: projects, error: projErr } = await supabase
     .from("projects")
-    .select("id, name, status, description, deployment_url, hosting_project_name, current_version, created_at, updated_at")
+    .select("id, name, status, description, deployment_url, hosting_project_name, last_deployed_at, created_at, updated_at")
     .eq("user_id", userId)
     .order("updated_at", { ascending: false });
 
-  const allProjects = projects || [];
+  if (projErr) {
+    console.error("[dashboard] Error querying projects for stats:", projErr.message);
+    throw new Error(`Failed to query projects: ${projErr.message}`);
+  }
+
+  const allProjects = (projects || []) as unknown as ProjectRecord[];
   const totalProjects = allProjects.length;
 
   const deployedProjectsList = allProjects.filter(
@@ -208,10 +235,24 @@ export async function getUserDashboardStats(
   const failedDeployments = allDeployments.filter((d) => d.status === "failed").length;
 
   // Real Project Distribution Chart Data
-  const projectDistribution = [
-    { name: "Deployed", value: deployedProjects, color: "#10b981" },
-    { name: "Draft", value: draftProjects, color: "#0284c7" },
-  ].filter((p) => p.value > 0);
+  const total = deployedProjects + draftProjects;
+  const deployedPercent = total > 0 ? Math.round((deployedProjects / total) * 100) : 0;
+  const draftPercent = total > 0 ? (deployedProjects > 0 && draftProjects > 0 ? 100 - deployedPercent : (draftProjects > 0 ? 100 : 0)) : 0;
+
+  const projectDistribution: ProjectDistributionItem[] = [
+    {
+      name: "Deployed",
+      value: deployedProjects,
+      color: "#10b981", // Emerald green for deployed
+      percentage: deployedPercent,
+    },
+    {
+      name: "Draft",
+      value: draftProjects,
+      color: "#f97316", // Orange/amber for drafts
+      percentage: draftPercent,
+    },
+  ];
 
   // Real Deployments Timeline (Past 7 days)
   const timelineMap = new Map<string, { date: string; name: string; success: number; failed: number }>();

@@ -14,7 +14,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
 
-    let body: any;
+    let body: Record<string, unknown> | undefined;
     try {
       body = await request.json();
     } catch {
@@ -104,9 +104,10 @@ export async function POST(request: Request) {
       } else {
         result = await generateWebsite(prompt.trim());
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Save generation error in database for telemetry / history
-      const safeLogMsg = error instanceof GeminiServiceError ? error.message : (error?.message || "Generation failed");
+      const err = error as { message?: string };
+      const safeLogMsg = error instanceof GeminiServiceError ? error.message : (err?.message || "Generation failed");
       await supabase.from("generation_history").insert({
         project_id: projectId,
         status: "error",

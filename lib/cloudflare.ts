@@ -479,11 +479,12 @@ export async function deleteCloudflarePagesProject(projectName: string): Promise
       timeout: 30000,
     });
     return true;
-  } catch (cliErr: any) {
-    if (cliErr?.message?.includes("not found") || cliErr?.stdout?.includes("not found")) {
+  } catch (cliErr: unknown) {
+    const err = cliErr as { message?: string; stdout?: string };
+    if (err?.message?.includes("not found") || err?.stdout?.includes("not found")) {
       return true;
     }
-    console.warn(`[cloudflare] CLI project deletion failed for '${cleanProjectName}':`, cliErr?.message);
+    console.warn(`[cloudflare] CLI project deletion failed for '${cleanProjectName}':`, err?.message);
     return false;
   }
 }
