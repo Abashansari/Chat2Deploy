@@ -298,9 +298,10 @@ export async function deployToCloudflarePages(options: {
   projectName: string;
   files: StaticFile[];
   projectId?: string;
+  existingHostingProjectName?: string;
   branch?: string;
 }): Promise<DeploymentResult> {
-  const { files, projectId, branch = "main" } = options;
+  const { files, projectId, existingHostingProjectName, branch = "main" } = options;
 
   // 1. Validate files
   validateStaticFiles(files);
@@ -308,9 +309,9 @@ export async function deployToCloudflarePages(options: {
   // 2. Validate credentials
   const credentials = getCloudflareCredentials();
 
-  // 3. Compute meaningful, clean project name without unnecessary random suffixes
-  // If user project name is "My Portfolio", safeProjectName will be "my-portfolio"
-  const safeProjectName = sanitizePagesProjectName(options.projectName);
+  // 3. Compute meaningful, clean project name without unnecessary random suffixes.
+  // If an existing hosting project name is provided from a previous deployment, reuse it strictly!
+  const safeProjectName = sanitizePagesProjectName(existingHostingProjectName || options.projectName);
 
   // 4. Create isolated temporary workspace for the static assets
   const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "c2d-deploy-"));
@@ -417,3 +418,73 @@ export async function deployToCloudflarePages(options: {
     }
   }
 }
+
+/**
+ * Safely removes a Cloudflare Pages project and unpublishes its hosted website.
+ * Uses Cloudflare API directly with graceful error handling if the project is already deleted.
+ */
+export async function deleteCloudflarePagesProject(projectName: string): Promise<boolean> {
+  if (!projectName || typeof projectName !== "string") {
+    return false;
+  }
+
+  const cleanProjectName = sanitizePagesProjectName(projectName);
+  let credentials;
+  try {
+    credentials = getCloudflareCredentials();
+  } catch (err) {
+    console.warn("[cloudflare] Cannot delete Cloudflare project - credentials missing:", err);
+    return false;
+  }
+
+  try {
+    const res = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${credentials.accountId}/pages/projects/${cleanProjectName}`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${credentials.token}`,
+        },
+      }
+    );
+
+    if (res.ok) {
+      console.info(`[cloudflare] Successfully deleted project '${cleanProjectName}' from Cloudflare Pages.`);
+      return true;
+    }
+
+    const data = await res.json().catch(() => ({}));
+    // If project already doesn't exist (e.g. 404 or 8000000), treat as reconciled
+    if (res.status === 404 || data.errors?.[0]?.code === 8000000) {
+      console.info(`[cloudflare] Project '${cleanProjectName}' not found on Cloudflare (already deleted).`);
+      return true;
+    }
+
+    console.warn(`[cloudflare] API deletion failed for '${cleanProjectName}':`, data);
+  } catch (apiErr) {
+    console.warn(`[cloudflare] REST delete request failed for '${cleanProjectName}':`, apiErr);
+  }
+
+  // Fallback to wrangler CLI if REST fails
+  try {
+    const env = {
+      ...process.env,
+      CLOUDFLARE_API_TOKEN: credentials.token,
+      CLOUDFLARE_ACCOUNT_ID: credentials.accountId,
+      WRANGLER_SEND_METRICS: "false",
+    };
+
+    await execFileAsync("npx", ["wrangler", "pages", "project", "delete", cleanProjectName, "--yes"], {
+      env,
+      timeout: 30000,
+    });
+    return true;
+  } catch (cliErr: any) {
+    if (cliErr?.message?.includes("not found") || cliErr?.stdout?.includes("not found")) {
+      return true;
+    }
+    console.warn(`[cloudflare] CLI project deletion failed for '${cleanProjectName}':`, cliErr?.message);
+    return false;
+  }
+}
+

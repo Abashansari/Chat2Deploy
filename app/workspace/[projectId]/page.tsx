@@ -92,6 +92,39 @@ export default function WorkspacePage({ params }: { params: Promise<{ projectId:
       // Non-critical
     }
 
+    // Fetch persisted deployment records to determine if project has ever been successfully deployed
+    try {
+      let existingDeployDetails: DeploymentDetails | null = null;
+
+      const { data: deployRecords, error: deployErr } = await supabase
+        .from("deployments")
+        .select("deployment_id, url, created_at, status")
+        .eq("project_id", projectId)
+        .eq("status", "success")
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (!deployErr && deployRecords && deployRecords.length > 0) {
+        existingDeployDetails = {
+          url: deployRecords[0].url,
+          id: deployRecords[0].deployment_id,
+          timestamp: deployRecords[0].created_at,
+        };
+      } else if (project.deployment_url || project.status === "published") {
+        existingDeployDetails = {
+          url: project.deployment_url || `https://${project.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${project.id.slice(0, 8)}.pages.dev`,
+          id: project.hosting_project_name || project.id.slice(0, 8),
+          timestamp: project.last_deployed_at || project.updated_at,
+        };
+      }
+
+      if (existingDeployDetails) {
+        setDeploymentDetails(existingDeployDetails);
+      }
+    } catch (err) {
+      console.warn("[WorkspacePage] Could not load persisted deployment details:", err);
+    }
+
     setIsInitializing(false);
   };
 
