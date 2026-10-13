@@ -23,15 +23,13 @@ const InstagramIcon = () => (
 );
 
 const productLinks = [
-  { label: "Features", href: "#features" },
-  { label: "Pricing", href: "#pricing" },
-  { label: "Templates", href: "#templates" },
-  { label: "Integrations", href: "#integrations" },
+  { label: "Features", href: "/features" },
+  { label: "Resources", href: "/resources" },
 ];
 
 const companyLinks = [
   { label: "About Us", href: "#about" },
-  { label: "Careers", href: "#careers" },
+  { label: "Careers", href: "/careers" },
   { label: "Blog", href: "#blog" },
   { label: "Contact", href: "#contact" },
 ];
@@ -39,7 +37,6 @@ const companyLinks = [
 const legalLinks = [
   { label: "Privacy Policy", href: "#privacy" },
   { label: "Terms of Service", href: "#terms" },
-  { label: "Cookie Policy", href: "#cookies" },
 ];
 
 export default function Footer() {
@@ -144,7 +141,7 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="border-t border-subtle pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-xs text-muted">
-            © 2024 MultiFlex Inc. All rights reserved.
+            © 2026 MultiFlex Inc. All rights reserved.
           </p>
           <div className="flex items-center gap-4">
             <a

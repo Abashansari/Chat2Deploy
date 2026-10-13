@@ -1442,30 +1442,41 @@ export default function DashboardPage() {
                       title: "Prompt Engineering Guide",
                       description: "Learn how to effectively prompt Gemini to generate responsive websites with modern design tokens.",
                       tag: "Guide",
+                      href: "/docs#prompting",
                     },
                     {
                       title: "Version Control & Rollback",
                       description: "Understand how snapshots are automatically created and how to roll back to any historical version seamlessly.",
                       tag: "Documentation",
+                      href: "/docs#versioning",
                     },
                     {
                       title: "Cloudflare Pages Edge Hosting",
                       description: "Discover how your sites are deployed to Cloudflare's global edge network in under 10 seconds.",
                       tag: "Infrastructure",
+                      href: "/docs#hosting",
                     },
                     {
                       title: "FAQ & Troubleshooting",
                       description: "Answers to common questions regarding deployment URLs, domain names, and AI rate-limit recovery.",
                       tag: "FAQ",
+                      href: "/faq",
                     },
                   ].map((res, i) => (
-                    <div key={i} className="bg-card border border-subtle rounded-xl p-5 hover:border-primary/50 transition-colors space-y-2">
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
-                        {res.tag}
-                      </span>
-                      <h3 className="text-base font-bold text-foreground">{res.title}</h3>
+                    <Link
+                      key={i}
+                      href={res.href}
+                      className="bg-card border border-subtle rounded-xl p-5 hover:border-primary/60 hover:-translate-y-0.5 transition-all space-y-2 block group"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                          {res.tag}
+                        </span>
+                        <span className="text-xs text-muted group-hover:text-primary transition-colors">&rarr;</span>
+                      </div>
+                      <h3 className="text-base font-bold text-foreground group-hover:text-primary transition-colors">{res.title}</h3>
                       <p className="text-xs text-muted leading-relaxed">{res.description}</p>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               </div>

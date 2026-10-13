@@ -38,10 +38,10 @@ export default function Navbar() {
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-8">
             <Link
-              href="/pricing"
+              href="/careers"
               className="text-sm text-secondary hover:text-foreground transition-colors"
             >
-              Pricing
+              Careers
             </Link>
             <Link
               href="/features"
@@ -91,10 +91,10 @@ export default function Navbar() {
         {mobileOpen && (
           <div className="md:hidden border-t border-subtle py-4 space-y-3">
             <Link
-              href="/pricing"
+              href="/careers"
               className="block text-sm text-secondary hover:text-foreground py-2"
             >
-              Pricing
+              Careers
             </Link>
             <Link
               href="/features"
