@@ -1,11 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getRedisClient } from "@/lib/redis";
-import {
-  sendCareerAdminNotificationEmail,
-  sendCareerConfirmationEmail,
-  type CareerApplicationData,
-} from "@/lib/career-email";
+import { createNotification } from "@/lib/notifications";
 
 export const runtime = "nodejs";
 
@@ -48,11 +44,8 @@ function sanitizeText(text: string, maxLen: number = MAX_TEXT_LENGTH): string {
 }
 
 // ---------- Simple in-memory rate limiter ----------
-// Tracks submissions per IP with a sliding window.
-// This supplements the DB unique constraint on email.
-
 const RATE_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
-const MAX_PER_WINDOW = 3;
+const MAX_PER_WINDOW = 5;
 const rateLimitMap = new Map<string, { count: number; windowStart: number }>();
 
 function isRateLimited(ip: string): boolean {
@@ -72,7 +65,7 @@ function isRateLimited(ip: string): boolean {
   return false;
 }
 
-// Periodic cleanup to prevent memory leak (every 30 min)
+// Periodic cleanup
 if (typeof globalThis !== "undefined") {
   const CLEANUP_INTERVAL = 30 * 60 * 1000;
   const globalKey = "__careerRateLimitCleanup";
@@ -208,11 +201,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check authenticated session if user is logged in
+    const supabase = await createClient();
+    let authUserId: string | null = null;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        authUserId = user.id;
+      }
+    } catch {
+      // non-blocking
+    }
+
     // ---------- Prepare Application Record ----------
     const applicationId = crypto.randomUUID();
     const createdAt = new Date().toISOString();
-    const applicationRecord: CareerApplicationData = {
+    const appliedPosition = "Learner Contributor";
+
+    const applicationRecord = {
       id: applicationId,
+      userId: authUserId,
       fullName,
       email,
       phone: phone || null,
@@ -225,17 +233,21 @@ export async function POST(request: NextRequest) {
       portfolioUrl,
       motivation,
       unpaidAcknowledged,
+      appliedPosition,
+      status: "Submitted",
+      adminNotes: null,
+      reviewedAt: null,
+      reviewedBy: null,
       createdAt,
+      updatedAt: createdAt,
     };
-
-    let persistedLocation: "supabase" | "redis" = "supabase";
-    const supabase = await createClient();
 
     // 1. Attempt insert into Supabase
     const { error: dbError } = await supabase
       .from("career_applications")
       .insert({
         id: applicationId,
+        user_id: authUserId,
         full_name: fullName,
         email,
         phone: phone || null,
@@ -248,8 +260,8 @@ export async function POST(request: NextRequest) {
         portfolio_url: portfolioUrl,
         motivation,
         unpaid_acknowledged: unpaidAcknowledged,
-        status: "pending",
-        email_sent: false,
+        applied_position: appliedPosition,
+        status: "Submitted",
       });
 
     if (dbError) {
@@ -257,13 +269,13 @@ export async function POST(request: NextRequest) {
       if (dbError.code === "23505" || dbError.message?.includes("duplicate")) {
         return NextResponse.json(
           {
-            error: "An application with this email address already exists. If you need to update your application, please contact us.",
+            error: "An application with this email address already exists. You can view your status under My Applications.",
           },
           { status: 409 }
         );
       }
 
-      // If table is not found in schema cache, fallback to Redis
+      // Check for missing table
       const isTableMissing =
         dbError.code === "PGRST205" ||
         dbError.message?.includes("Could not find the table") ||
@@ -271,91 +283,63 @@ export async function POST(request: NextRequest) {
 
       if (isTableMissing) {
         console.warn(
-          "[/api/careers/apply] Supabase table 'career_applications' not yet created. Gracefully falling back to Upstash Redis."
+          "[/api/careers/apply] Supabase table 'career_applications' not yet created. Gracefully persisting to Upstash Redis."
         );
-
-        const redis = getRedisClient();
-        if (redis) {
-          // Check for duplicate submission in Redis
-          const existingId = await redis.get(`career_app_by_email:${email}`).catch(() => null);
-          if (existingId) {
-            return NextResponse.json(
-              {
-                error: "An application with this email address already exists. If you need to update your application, please contact us.",
-              },
-              { status: 409 }
-            );
-          }
-
-          // Persist to Upstash Redis
-          await redis.set(`career_app:${applicationId}`, JSON.stringify(applicationRecord));
-          await redis.set(`career_app_by_email:${email}`, applicationId);
-          await redis.lpush("career_applications_queue", applicationId);
-          persistedLocation = "redis";
-        } else {
-          console.error("[/api/careers/apply] Neither Supabase table nor Redis available.");
-          return NextResponse.json(
-            { error: "Database configuration error. Please run the career_applications migration in Supabase." },
-            { status: 500 }
-          );
-        }
       } else {
-        console.error("[/api/careers/apply] Supabase insert error:", dbError.message);
-        return NextResponse.json(
-          { error: "Failed to save your application. Please try again later." },
-          { status: 500 }
-        );
+        console.warn("[/api/careers/apply] Supabase insert error, persisting to Redis:", dbError.message);
       }
     }
 
-    // ---------- Send Email Notifications ----------
-    let emailWarning: string | null = null;
+    // 2. Always persist to Upstash Redis for instant retrieval & resilience
+    const redis = getRedisClient();
+    if (redis) {
+      const existingId = await redis.get(`career_app_by_email:${email}`).catch(() => null);
+      if (existingId) {
+        return NextResponse.json(
+          {
+            error: "An application with this email address already exists. You can view your status under My Applications.",
+          },
+          { status: 409 }
+        );
+      }
 
+      await redis.set(`career_app:${applicationId}`, JSON.stringify(applicationRecord));
+      await redis.set(`career_app_by_email:${email}`, applicationId);
+      await redis.lpush("career_applications_queue", applicationId);
+    }
+
+    // ---------- Persistent In-App Notifications (No Emails) ----------
     try {
-      // 1. Send Admin Notification to ansariabash2004@gmail.com
-      await sendCareerAdminNotificationEmail(applicationRecord);
+      // 1. Admin Notification
+      const adminEmail = process.env.CAREERS_ADMIN_EMAIL?.trim();
+      if (adminEmail) {
+        await createNotification({
+          recipientEmail: adminEmail,
+          relatedApplicationId: applicationId,
+          type: "application_submitted",
+          title: `New Application: ${fullName}`,
+          message: `${fullName} has submitted an application for ${appliedPosition}. Institution: ${institution}, Course: ${course}.`,
+        });
+      }
 
-      // 2. Send Applicant Confirmation
-      await sendCareerConfirmationEmail({
-        to: email,
-        applicantName: fullName,
+      // 2. Learner Confirmation Notification
+      await createNotification({
+        recipientUserId: authUserId,
+        recipientEmail: email,
+        relatedApplicationId: applicationId,
+        type: "application_submitted",
+        title: "Application Submitted Successfully",
+        message: "Your application has been submitted successfully. You can track your application status anytime under My Applications.",
       });
-
-      // Update email status if in Supabase
-      if (persistedLocation === "supabase") {
-        try {
-          await supabase.rpc("record_career_application_email_status", {
-            app_id: applicationId,
-            was_sent: true,
-            err_msg: null,
-          });
-        } catch {
-          // non-critical
-        }
-      }
-    } catch (emailErr) {
-      emailWarning = "Your application was received, but email notification delivery is being processed.";
-      const errMsg = emailErr instanceof Error ? emailErr.message : "Unknown email error";
-      console.error("[/api/careers/apply] Email notification error:", errMsg);
-
-      if (persistedLocation === "supabase") {
-        try {
-          await supabase.rpc("record_career_application_email_status", {
-            app_id: applicationId,
-            was_sent: false,
-            err_msg: errMsg.slice(0, 500),
-          });
-        } catch {
-          // non-critical
-        }
-      }
+    } catch (notifErr) {
+      console.warn("[/api/careers/apply] In-app notification creation non-fatal error:", notifErr);
     }
 
     return NextResponse.json(
       {
         success: true,
-        message: "Your application has been received! We will review it and get back to you if you are shortlisted.",
-        emailWarning,
+        message: "Your application has been received! You can track your application status anytime under My Applications.",
+        applicationId,
       },
       { status: 201 }
     );

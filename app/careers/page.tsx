@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
+import Link from "next/link";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import {
@@ -880,6 +881,15 @@ export default function CareersPage() {
               <p className="text-muted text-sm md:text-base max-w-lg mx-auto">
                 Fill out the form below. All fields marked with <span className="text-red-400">*</span> are required.
               </p>
+              <div className="mt-3">
+                <Link
+                  href="/my-applications"
+                  className="inline-flex items-center gap-1.5 text-xs text-primary hover:text-primary-dark font-medium transition-colors"
+                >
+                  <span>Already applied? Track your status in My Applications</span>
+                  <ArrowRight size={12} />
+                </Link>
+              </div>
             </div>
 
             {/* Success State */}
@@ -892,15 +902,15 @@ export default function CareersPage() {
                 <p className="text-sm text-muted max-w-md mx-auto leading-relaxed">
                   {submitResult.message}
                 </p>
-                {submitResult.emailWarning && (
-                  <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg text-xs text-amber-300 flex items-start gap-2">
-                    <AlertCircle size={14} className="shrink-0 mt-0.5" />
-                    <span>{submitResult.emailWarning}</span>
-                  </div>
-                )}
-                <p className="text-xs text-muted">
-                  Our team will review your submission and contact you if you are shortlisted.
-                </p>
+                <div className="pt-2">
+                  <Link
+                    href="/my-applications"
+                    className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-primary hover:bg-primary-dark text-white text-xs font-semibold transition-all shadow-md"
+                  >
+                    <span>View Status in My Applications</span>
+                    <ArrowRight size={14} />
+                  </Link>
+                </div>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-6" noValidate>

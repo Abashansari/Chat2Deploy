@@ -23,6 +23,7 @@ import {
   BarChart3,
   Settings,
   BookOpen,
+  Briefcase,
   Plus,
   Menu,
   X,
@@ -75,6 +76,10 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [statsError, setStatsError] = useState<string | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  // Applications & Admin State
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [applicationsCount, setApplicationsCount] = useState<number | undefined>(undefined);
 
   // Modals & Dialogs
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -163,6 +168,31 @@ export default function DashboardPage() {
       } else if (statsData.error) {
         setStatsError(statsData.error);
       }
+
+      // Check admin status & applications count
+      fetch("/api/admin/careers/auth-check")
+        .then((r) => (r.ok ? r.json() : { isAdmin: false }))
+        .then(async (authData) => {
+          if (authData.isAdmin) {
+            setIsAdmin(true);
+            const adminApps: Record<string, unknown> = await fetch("/api/admin/careers/applications?pageSize=1")
+              .then((r) => (r.ok ? r.json() : {}))
+              .catch(() => ({}));
+            if (typeof adminApps.totalCount === "number") {
+              setApplicationsCount(adminApps.totalCount);
+            }
+          } else {
+            setIsAdmin(false);
+            const userApps: Record<string, unknown> = await fetch("/api/my-applications")
+              .then((r) => (r.ok ? r.json() : {}))
+              .catch(() => ({}));
+            if (Array.isArray(userApps.applications)) {
+              setApplicationsCount((userApps.applications as unknown[]).length);
+            }
+          }
+        })
+        .catch(() => {});
+
       hasLoadedOnceRef.current = true;
     } catch (err) {
       console.error("[Dashboard] Error loading dashboard data:", err);
@@ -468,6 +498,12 @@ export default function DashboardPage() {
     { name: "Projects", id: "projects" as DashboardTab, icon: FolderKanban, count: projects.length },
     { name: "Deployments", id: "deployments" as DashboardTab, icon: Rocket, count: deployments.length },
     { name: "Analytics", id: "analytics" as DashboardTab, icon: BarChart3 },
+    {
+      name: isAdmin ? "Manage Applications" : "My Applications",
+      href: isAdmin ? "/admin/careers" : "/my-applications",
+      icon: Briefcase,
+      count: applicationsCount,
+    },
     { name: "Settings", id: "settings" as DashboardTab, icon: Settings },
     { name: "Resources", id: "resources" as DashboardTab, icon: BookOpen },
   ];
@@ -517,30 +553,49 @@ export default function DashboardPage() {
 
         {/* Navigation Items */}
         <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto">
-          {navigation.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => {
-                setActiveTab(item.id);
-                setIsMobileMenuOpen(false);
-              }}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                activeTab === item.id
-                  ? "bg-primary/10 text-primary"
-                  : "text-secondary hover:bg-surface hover:text-foreground"
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <item.icon size={18} />
-                <span>{item.name}</span>
-              </div>
-              {item.count !== undefined && item.count > 0 && (
-                <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-surface border border-subtle text-muted">
-                  {item.count}
-                </span>
-              )}
-            </button>
-          ))}
+          {navigation.map((item) =>
+            'href' in item && item.href ? (
+              <Link
+                key={item.name}
+                href={item.href}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-secondary hover:bg-surface hover:text-foreground group"
+              >
+                <div className="flex items-center gap-3">
+                  <item.icon size={18} className="text-secondary group-hover:text-primary transition-colors" />
+                  <span>{item.name}</span>
+                </div>
+                {item.count !== undefined && item.count > 0 && (
+                  <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-surface border border-subtle text-muted">
+                    {item.count}
+                  </span>
+                )}
+              </Link>
+            ) : (
+              <button
+                key={item.id}
+                onClick={() => {
+                  if (item.id) setActiveTab(item.id);
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  activeTab === item.id
+                    ? "bg-primary/10 text-primary"
+                    : "text-secondary hover:bg-surface hover:text-foreground"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <item.icon size={18} />
+                  <span>{item.name}</span>
+                </div>
+                {item.count !== undefined && item.count > 0 && (
+                  <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-surface border border-subtle text-muted">
+                    {item.count}
+                  </span>
+                )}
+              </button>
+            )
+          )}
         </nav>
 
         {/* User Profile Footer */}
@@ -566,6 +621,13 @@ export default function DashboardPage() {
                   >
                     <span>Home Page</span>
                     <Home size={16} className="text-muted" />
+                  </Link>
+                  <Link
+                    href={isAdmin ? "/admin/careers" : "/my-applications"}
+                    className="w-full flex items-center justify-between px-2 py-1.5 text-sm text-secondary hover:text-foreground hover:bg-surface rounded-md transition-colors"
+                  >
+                    <span>{isAdmin ? "Manage Applications" : "My Applications"}</span>
+                    <Briefcase size={16} className="text-muted" />
                   </Link>
                   <button
                     onClick={logout}

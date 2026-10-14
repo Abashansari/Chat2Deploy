@@ -2,12 +2,13 @@
  * Career Application Email Dispatcher
  *
  * Dispatches:
- * 1. Admin notification email to ansariabash2004@gmail.com with the applicant's complete profile.
+ * 1. Admin notification email to CAREERS_ADMIN_EMAIL with complete applicant profile and dashboard link.
  * 2. Applicant confirmation email to the applicant.
+ * 3. Official selection email to selected candidates with customizable content.
  *
  * Environment variables:
  *   RESEND_API_KEY — API key from https://resend.com/api-keys
- *   CAREERS_ADMIN_EMAIL — Admin recipient (defaults to: ansariabash2004@gmail.com)
+ *   CAREERS_ADMIN_EMAIL — Authorized admin email address
  *   CAREERS_FROM_EMAIL — Sender address (defaults to: "Chat2Deploy Careers <onboarding@resend.dev>")
  */
 
@@ -25,12 +26,22 @@ export interface CareerApplicationData {
   portfolioUrl?: string | null;
   motivation: string;
   unpaidAcknowledged: boolean;
+  appliedPosition?: string;
+  status?: string;
   createdAt?: string;
 }
 
 export interface ConfirmationEmailOptions {
   to: string;
   applicantName: string;
+}
+
+export interface SelectionEmailOptions {
+  to: string;
+  applicantName: string;
+  appliedPosition?: string;
+  subject: string;
+  content: string;
 }
 
 function escapeHtml(text: string): string {
@@ -42,11 +53,42 @@ function escapeHtml(text: string): string {
 }
 
 /**
+ * Returns default subject and body for selection emails.
+ */
+export function getDefaultSelectionEmail(applicantName: string, appliedPosition: string = "Learner Contributor") {
+  const subject = `Congratulations ${applicantName}! You have been selected for the Chat2Deploy ${appliedPosition} Program`;
+  const body = `Dear ${applicantName},
+
+We are delighted to inform you that your application for the Chat2Deploy ${appliedPosition} Program has been accepted!
+
+Our review team was genuinely impressed by your background, your demonstrated interest in software engineering, and your motivation to contribute to real-world products.
+
+Program Overview & Next Steps:
+• Role: ${appliedPosition}
+• Modality: Remote, collaborative project contribution
+• Tooling & Setup: You will receive an invitation to our team repository and communication channels within the next 48 hours.
+• Program Terms: As acknowledged in your application, this is an unpaid learning opportunity designed to provide hands-on experience with modern web architecture and deployment systems. An official Certificate of Completion will be awarded upon meeting milestone deliverables.
+
+Please reply directly to this email to confirm your acceptance and your readiness to begin onboarding.
+
+Congratulations once again, and welcome to the team!
+
+Warm regards,
+Careers & Contributor Programs
+Chat2Deploy Team`;
+
+  return { subject, body };
+}
+
+/**
  * Builds the branded admin notification HTML email.
  */
-function buildAdminNotificationHtml(app: CareerApplicationData): string {
-  const year = new Date().getFullYear();
-  const dateStr = app.createdAt ? new Date(app.createdAt).toLocaleString("en-US", { timeZone: "Asia/Kolkata" }) : new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
+function buildAdminNotificationHtml(app: CareerApplicationData, dashboardUrl: string): string {
+  const dateStr = app.createdAt
+    ? new Date(app.createdAt).toLocaleString("en-US", { timeZone: "Asia/Kolkata", dateStyle: "medium", timeStyle: "short" }) + " (IST)"
+    : new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata", dateStyle: "medium", timeStyle: "short" }) + " (IST)";
+
+  const position = app.appliedPosition || "Learner Contributor";
 
   const skillsBadges = app.skills
     .map(
@@ -75,6 +117,7 @@ function buildAdminNotificationHtml(app: CareerApplicationData): string {
                   <td>
                     <span style="display:inline-block;background-color:#0284c7;color:#ffffff;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;padding:3px 8px;border-radius:4px;margin-bottom:8px;">New Application</span>
                     <h1 style="margin:4px 0 0;font-size:20px;font-weight:700;color:#f4f4f5;">Chat2Deploy Contributor Program</h1>
+                    <div style="margin-top:4px;font-size:13px;color:#38bdf8;font-weight:500;">Role: ${escapeHtml(position)}</div>
                   </td>
                   <td align="right" style="vertical-align:top;">
                     <span style="font-size:11px;color:#a1a1aa;">${escapeHtml(dateStr)}</span>
@@ -95,12 +138,30 @@ function buildAdminNotificationHtml(app: CareerApplicationData): string {
             </td>
           </tr>
 
+          <!-- Primary Call to Action: Admin Dashboard Link -->
+          <tr>
+            <td style="padding:0 32px 20px;">
+              <div style="background-color:#0c4a6e22;border:1px solid #0284c7;border-radius:8px;padding:16px;text-align:center;">
+                <p style="margin:0 0 12px;font-size:13px;color:#e0f2fe;">
+                  Review this application and manage candidate selection in the Admin Dashboard:
+                </p>
+                <a href="${escapeHtml(dashboardUrl)}" style="display:inline-block;background:linear-gradient(135deg,#0284c7 0%,#0369a1 100%);color:#ffffff;text-decoration:none;font-size:13px;font-weight:600;padding:10px 22px;border-radius:6px;box-shadow:0 4px 12px rgba(2,132,199,0.35);">
+                  Review Application in Admin Dashboard &rarr;
+                </a>
+              </div>
+            </td>
+          </tr>
+
           <!-- Academic & Profile Details Table -->
           <tr>
             <td style="padding:0 32px 20px;">
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#09090b;border-radius:8px;border:1px solid #27272a;border-collapse:collapse;">
                 <tr>
-                  <td style="padding:10px 14px;border-bottom:1px solid #27272a;font-size:12px;color:#71717a;width:35%;">Institution</td>
+                  <td style="padding:10px 14px;border-bottom:1px solid #27272a;font-size:12px;color:#71717a;width:35%;">Applied Position</td>
+                  <td style="padding:10px 14px;border-bottom:1px solid #27272a;font-size:13px;color:#38bdf8;font-weight:600;">${escapeHtml(position)}</td>
+                </tr>
+                <tr>
+                  <td style="padding:10px 14px;border-bottom:1px solid #27272a;font-size:12px;color:#71717a;">Institution</td>
                   <td style="padding:10px 14px;border-bottom:1px solid #27272a;font-size:13px;color:#e4e4e7;font-weight:500;">${escapeHtml(app.institution)}</td>
                 </tr>
                 <tr>
@@ -112,7 +173,7 @@ function buildAdminNotificationHtml(app: CareerApplicationData): string {
                   <td style="padding:10px 14px;border-bottom:1px solid #27272a;font-size:13px;color:#e4e4e7;font-weight:500;">${escapeHtml(app.currentYear)}</td>
                 </tr>
                 <tr>
-                  <td style="padding:10px 14px;border-bottom:1px solid #27272a;font-size:12px;color:#71717a;">GitHub</td>
+                  <td style="padding:10px 14px;border-bottom:1px solid #27272a;font-size:12px;color:#71717a;">GitHub Profile</td>
                   <td style="padding:10px 14px;border-bottom:1px solid #27272a;font-size:13px;">
                     <a href="${escapeHtml(app.githubUrl)}" target="_blank" style="color:#38bdf8;text-decoration:none;font-weight:500;">${escapeHtml(app.githubUrl)} &rarr;</a>
                   </td>
@@ -131,6 +192,10 @@ function buildAdminNotificationHtml(app: CareerApplicationData): string {
                     <a href="${escapeHtml(app.portfolioUrl)}" target="_blank" style="color:#38bdf8;text-decoration:none;font-weight:500;">${escapeHtml(app.portfolioUrl)} &rarr;</a>
                   </td>
                 </tr>` : ""}
+                <tr>
+                  <td style="padding:10px 14px;border-bottom:1px solid #27272a;font-size:12px;color:#71717a;">Application ID</td>
+                  <td style="padding:10px 14px;border-bottom:1px solid #27272a;font-size:12px;color:#a1a1aa;font-family:monospace;">${escapeHtml(app.id)}</td>
+                </tr>
                 <tr>
                   <td style="padding:10px 14px;font-size:12px;color:#71717a;">Unpaid Program Term</td>
                   <td style="padding:10px 14px;font-size:13px;color:#34d399;font-weight:600;">Acknowledged &amp; Agreed</td>
@@ -166,7 +231,7 @@ function buildAdminNotificationHtml(app: CareerApplicationData): string {
                     </p>
                   </td>
                   <td align="right">
-                    <a href="mailto:${escapeHtml(app.email)}?subject=Re:%20Chat2Deploy%20Contributor%20Program%20Application" style="display:inline-block;background-color:#0284c7;color:#ffffff;text-decoration:none;font-size:12px;font-weight:600;padding:8px 16px;border-radius:6px;">Reply Candidate</a>
+                    <a href="${escapeHtml(dashboardUrl)}" style="display:inline-block;background-color:#0284c7;color:#ffffff;text-decoration:none;font-size:12px;font-weight:600;padding:8px 16px;border-radius:6px;">View in Dashboard</a>
                   </td>
                 </tr>
               </table>
@@ -180,9 +245,10 @@ function buildAdminNotificationHtml(app: CareerApplicationData): string {
 </html>`;
 }
 
-function buildAdminNotificationPlainText(app: CareerApplicationData): string {
+function buildAdminNotificationPlainText(app: CareerApplicationData, dashboardUrl: string): string {
   return `=== NEW CHAT2DEPLOY CAREER APPLICATION ===
 
+Applied Position: ${app.appliedPosition || "Learner Contributor"}
 Applicant: ${app.fullName}
 Email: ${app.email}
 Phone: ${app.phone || "Not provided"}
@@ -203,6 +269,10 @@ Statement of Motivation:
 ${app.motivation}
 
 Application ID: ${app.id}
+Submitted: ${app.createdAt || new Date().toISOString()}
+
+Admin Dashboard Review Link:
+${dashboardUrl}
 `;
 }
 
@@ -227,10 +297,10 @@ function buildConfirmationHtml(applicantName: string): string {
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td>
-                    <div style="width:36px;height:36px;background-color:#e8633e;border-radius:50%;display:inline-block;vertical-align:middle;text-align:center;line-height:36px;margin-right:10px;">
+                    <div style="width:36px;height:36px;background-color:#0284c7;border-radius:50%;display:inline-block;vertical-align:middle;text-align:center;line-height:36px;margin-right:10px;">
                       <span style="color:#ffffff;font-size:14px;font-weight:bold;">C2D</span>
                     </div>
-                    <span style="font-size:20px;font-weight:700;color:#e5e5e5;vertical-align:middle;">Chat2Deploy</span>
+                    <span style="font-size:20px;font-weight:700;color:#e5e5e5;vertical-align:middle;">Chat2Deploy Careers</span>
                   </td>
                 </tr>
               </table>
@@ -250,13 +320,13 @@ function buildConfirmationHtml(applicantName: string): string {
                 Thank you for applying to the <strong style="color:#e5e5e5;">Chat2Deploy Learner Contributor Program</strong>.
               </p>
               <p style="margin:0 0 16px;font-size:15px;color:#d1d5db;line-height:1.6;">
-                We have successfully received your application. Our team will review the information you submitted and contact you if you are shortlisted or selected for the next stage.
+                We have successfully received your application. Our administrative team will review your profile, skills, and statement of motivation. If shortlisted or selected, you will receive an official notification from us with next steps.
               </p>
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0;">
                 <tr>
                   <td style="background-color:#151515;border:1px solid #222222;border-radius:8px;padding:16px;">
                     <p style="margin:0;font-size:13px;color:#9ca3af;line-height:1.5;">
-                      This is an <strong style="color:#d1d5db;">unpaid learning and contribution opportunity</strong>; no stipend is provided. A certificate may be awarded after successful completion of the program and fulfillment of its requirements.
+                      This is an <strong style="color:#d1d5db;">unpaid learning and contribution opportunity</strong>; no stipend is provided. A certificate of completion is awarded after successful participation and fulfillment of program milestones.
                     </p>
                   </td>
                 </tr>
@@ -298,35 +368,127 @@ Chat2Deploy Team`;
 }
 
 /**
- * Sends an email notification to the administrator (ansariabash2004@gmail.com).
+ * Builds the official selection HTML email for accepted learners.
+ */
+function buildSelectionHtml(applicantName: string, appliedPosition: string, content: string): string {
+  const year = new Date().getFullYear();
+
+  // Convert plain text newlines into formatted paragraphs
+  const formattedContent = content
+    .split(/\n\n+/)
+    .map((paragraph) => `<p style="margin:0 0 16px;font-size:15px;color:#d1d5db;line-height:1.6;">${escapeHtml(paragraph).replace(/\n/g, "<br/>")}</p>`)
+    .join("");
+
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Official Selection — Chat2Deploy Careers</title>
+</head>
+<body style="margin:0;padding:0;background-color:#0a0a0c;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#f4f4f5;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#0a0a0c;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#18181b;border-radius:12px;overflow:hidden;border:1px solid #27272a;">
+          <!-- Header Banner -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#042f2e 0%,#0f172a 100%);padding:32px 32px 24px;border-bottom:2px solid #14b8a6;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td>
+                    <span style="display:inline-block;background-color:#14b8a6;color:#042f2e;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;padding:4px 10px;border-radius:4px;margin-bottom:10px;">Official Selection</span>
+                    <h1 style="margin:0;font-size:22px;font-weight:700;color:#f0fdfa;">Welcome to Chat2Deploy</h1>
+                    <div style="margin-top:6px;font-size:13px;color:#5eead4;">Role: ${escapeHtml(appliedPosition)}</div>
+                  </td>
+                  <td align="right" style="vertical-align:top;">
+                    <div style="width:40px;height:40px;background-color:#14b8a6;border-radius:50%;display:inline-block;text-align:center;line-height:40px;">
+                      <span style="color:#042f2e;font-size:16px;font-weight:bold;">★</span>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Congratulatory Badge -->
+          <tr>
+            <td style="padding:28px 32px 12px;">
+              <div style="background-color:#134e4a22;border:1px solid #14b8a6;border-radius:8px;padding:14px 18px;">
+                <p style="margin:0;font-size:14px;color:#99f6e4;font-weight:600;">
+                  🎉 You have been officially selected for the ${escapeHtml(appliedPosition)} Program!
+                </p>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Email Content Body -->
+          <tr>
+            <td style="padding:16px 32px 28px;">
+              ${formattedContent}
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color:#09090b;padding:24px 32px;border-top:1px solid #27272a;">
+              <p style="margin:0 0 6px;font-size:12px;color:#a1a1aa;text-align:center;">
+                Chat2Deploy Contributor Programs • Empowering the next generation of builders
+              </p>
+              <p style="margin:0;font-size:11px;color:#71717a;text-align:center;">
+                © ${year} Chat2Deploy. All rights reserved.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+/**
+ * Sends an email notification to the administrator configured in CAREERS_ADMIN_EMAIL.
+ * Includes applicant details and a link to the admin dashboard.
  */
 export async function sendCareerAdminNotificationEmail(
   app: CareerApplicationData,
-  recipientOverride?: string
+  dashboardOrigin?: string
 ): Promise<void> {
-  const adminEmail = recipientOverride || process.env.CAREERS_ADMIN_EMAIL || "ansariabash2004@gmail.com";
+  const adminEmail = process.env.CAREERS_ADMIN_EMAIL?.trim();
+
+  if (!adminEmail) {
+    console.error("[career-email] CAREERS_ADMIN_EMAIL environment variable is missing.");
+    throw new Error("Careers admin email configuration is missing on server.");
+  }
+
+  const origin = dashboardOrigin || process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const dashboardUrl = `${origin.replace(/\/$/, "")}/admin/careers?id=${encodeURIComponent(app.id)}`;
+
   const apiKey = process.env.RESEND_API_KEY;
 
   if (!apiKey) {
     console.log(`\n============================================================`);
     console.log(`[CAREERS NOTIFICATION EMAIL] TO: ${adminEmail}`);
-    console.log(`SUBJECT: New Application: ${app.fullName} (${app.course})`);
-    console.log(`REPLY-TO: ${app.email}`);
+    console.log(`SUBJECT: [Chat2Deploy Careers] New Application: ${app.fullName} (${app.appliedPosition || "Learner Contributor"})`);
+    console.log(`DASHBOARD URL: ${dashboardUrl}`);
     console.log(`------------------------------------------------------------`);
-    console.log(buildAdminNotificationPlainText(app));
+    console.log(buildAdminNotificationPlainText(app, dashboardUrl));
     console.log(`============================================================\n`);
     return;
   }
 
   const fromAddress = process.env.CAREERS_FROM_EMAIL || "Chat2Deploy Careers <onboarding@resend.dev>";
+  const position = app.appliedPosition || "Learner Contributor";
 
   const payload = {
     from: fromAddress,
     to: [adminEmail],
     reply_to: app.email,
-    subject: `[Chat2Deploy Careers] New Application: ${app.fullName} (${app.course})`,
-    html: buildAdminNotificationHtml(app),
-    text: buildAdminNotificationPlainText(app),
+    subject: `[Chat2Deploy Careers] New Application: ${app.fullName} (${position})`,
+    html: buildAdminNotificationHtml(app, dashboardUrl),
+    text: buildAdminNotificationPlainText(app, dashboardUrl),
   };
 
   const response = await fetch("https://api.resend.com/emails", {
@@ -340,7 +502,7 @@ export async function sendCareerAdminNotificationEmail(
 
   if (!response.ok) {
     const errorBody = await response.text().catch(() => "Unknown error");
-    throw new Error(`Resend Admin Email error (${response.status}): ${errorBody.slice(0, 200)}`);
+    throw new Error(`Resend Admin Notification error (${response.status}): ${errorBody.slice(0, 300)}`);
   }
 }
 
@@ -375,6 +537,64 @@ export async function sendCareerConfirmationEmail(options: ConfirmationEmailOpti
 
   if (!response.ok) {
     const errorBody = await response.text().catch(() => "Unknown error");
-    throw new Error(`Resend Applicant Email error (${response.status}): ${errorBody.slice(0, 200)}`);
+    throw new Error(`Resend Applicant Confirmation error (${response.status}): ${errorBody.slice(0, 300)}`);
   }
+}
+
+/**
+ * Sends an official selection email to the accepted learner.
+ * Fails safely and never marks as sent if delivery fails.
+ */
+export async function sendLearnerSelectionEmail(options: SelectionEmailOptions): Promise<{ id?: string }> {
+  const { to, applicantName, appliedPosition = "Learner Contributor", subject, content } = options;
+
+  if (!to || !to.includes("@")) {
+    throw new Error("Invalid recipient email address.");
+  }
+  if (!subject || !subject.trim()) {
+    throw new Error("Selection email subject is required.");
+  }
+  if (!content || !content.trim()) {
+    throw new Error("Selection email content is required.");
+  }
+
+  const apiKey = process.env.RESEND_API_KEY;
+
+  if (!apiKey) {
+    console.log(`\n============================================================`);
+    console.log(`[SELECTION EMAIL DEV SIMULATION]`);
+    console.log(`TO: ${to}`);
+    console.log(`SUBJECT: ${subject}`);
+    console.log(`------------------------------------------------------------`);
+    console.log(content);
+    console.log(`============================================================\n`);
+    return { id: "dev-simulated-id" };
+  }
+
+  const fromAddress = process.env.CAREERS_FROM_EMAIL || "Chat2Deploy Careers <onboarding@resend.dev>";
+
+  const payload = {
+    from: fromAddress,
+    to: [to],
+    subject: subject.trim(),
+    html: buildSelectionHtml(applicantName, appliedPosition, content),
+    text: content,
+  };
+
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text().catch(() => "Unknown error");
+    throw new Error(`Selection email delivery failed (${response.status}): ${errorBody.slice(0, 300)}`);
+  }
+
+  const data = (await response.json().catch(() => ({}))) as { id?: string };
+  return { id: data.id };
 }
