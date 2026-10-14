@@ -61,6 +61,12 @@ export default function Navbar() {
             >
               Resources
             </Link>
+            <Link
+              href="/support"
+              className="text-sm text-secondary hover:text-foreground transition-colors"
+            >
+              Support Us
+            </Link>
           </nav>
 
           {/* Desktop Auth */}
@@ -97,32 +103,51 @@ export default function Navbar() {
         {mobileOpen && (
           <div className="md:hidden border-t border-subtle py-4 space-y-3">
             <Link
+              href="/about"
+              onClick={() => setMobileOpen(false)}
+              className="block text-sm text-secondary hover:text-foreground py-2"
+            >
+              About Us
+            </Link>
+            <Link
               href="/careers"
+              onClick={() => setMobileOpen(false)}
               className="block text-sm text-secondary hover:text-foreground py-2"
             >
               Careers
             </Link>
             <Link
               href="/features"
+              onClick={() => setMobileOpen(false)}
               className="block text-sm text-secondary hover:text-foreground py-2"
             >
               Features
             </Link>
             <Link
               href="/resources"
+              onClick={() => setMobileOpen(false)}
               className="block text-sm text-secondary hover:text-foreground py-2"
             >
               Resources
             </Link>
+            <Link
+              href="/support"
+              onClick={() => setMobileOpen(false)}
+              className="block text-sm text-secondary hover:text-foreground py-2"
+            >
+              Support Us
+            </Link>
             <hr className="border-subtle" />
             <Link
               href="/login"
+              onClick={() => setMobileOpen(false)}
               className="block text-sm text-secondary hover:text-foreground py-2"
             >
               Login
             </Link>
             <Link
               href="/register"
+              onClick={() => setMobileOpen(false)}
               className="inline-flex items-center justify-center px-5 py-2 text-sm font-medium text-white bg-primary rounded-full hover:bg-primary-dark transition-colors"
             >
               Signup
