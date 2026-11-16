@@ -273,6 +273,9 @@ export default function WorkspacePage({ params }: { params: Promise<{ projectId:
   if (isInitializing) {
     return (
       <div className="flex h-screen items-center justify-center bg-background flex-col gap-4">
+        <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border border-subtle bg-[#0b0d12] shadow-sm">
+          <img src="/logo.svg" alt="Ansar AI logo" className="h-10 w-10 object-contain" />
+        </div>
         <Loader2 className="animate-spin text-primary w-8 h-8" />
         <p className="text-muted text-sm font-medium">Loading Workspace...</p>
       </div>

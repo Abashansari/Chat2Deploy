@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BrandLogo } from "./BrandLogo";
 
 // Social icon SVGs (lucide-react no longer exports brand icons)
 const TwitterIcon = () => (
@@ -32,7 +33,6 @@ const productLinks = [
 const companyLinks = [
   { label: "About", href: "/about" },
   { label: "Careers", href: "/careers" },
-  // { label: "Support Us", href: "/support" },
   { label: "Contact", href: "/contact" },
 ];
 
@@ -46,44 +46,17 @@ export default function Footer() {
     <footer className="w-full bg-background text-muted pt-14 pb-8">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 mb-12">
-          {/* Brand */}
           <div className="col-span-2 sm:col-span-1">
-            <Link href="/" className="flex items-center gap-2 mb-4 group">
-              <div className="w-7 h-7 bg-primary rounded-full flex items-center justify-center">
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 16 16"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M8 2L14 6V14H2V6L8 2Z"
-                    stroke="white"
-                    strokeWidth="1.5"
-                    strokeLinejoin="round"
-                    fill="none"
-                  />
-                  <rect
-                    x="6"
-                    y="9"
-                    width="4"
-                    height="5"
-                    rx="0.5"
-                    fill="white"
-                  />
-                </svg>
-              </div>
-              <span className="text-base font-bold text-foreground group-hover:text-primary transition-colors">
-                Ansar AI
-              </span>
-            </Link>
+            <BrandLogo
+              className="mb-4"
+              iconSize={18}
+              textClassName="text-base"
+            />
             <p className="text-xs leading-relaxed max-w-[200px]">
               The easiest way to build and host websites with natural language AI. Create, refine, and deploy in minutes.
             </p>
           </div>
 
-          {/* Product */}
           <div>
             <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider mb-4">
               Product
@@ -102,7 +75,6 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Company */}
           <div>
             <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider mb-4">
               Company
@@ -121,7 +93,6 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Legal */}
           <div>
             <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider mb-4">
               Legal
@@ -141,7 +112,6 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Bottom Bar */}
         <div className="border-t border-subtle pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-xs text-muted">
             © 2026 Ansar AI . All rights reserved.

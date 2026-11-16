@@ -7,6 +7,7 @@ import Footer from "../components/Footer";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { BrandLogo } from "../components/BrandLogo";
 
 export default function RegisterPage() {
   const [name, setName] = useState("");
@@ -74,9 +75,15 @@ export default function RegisterPage() {
       <Navbar />
       <main className="flex-1 flex flex-col items-center justify-center min-h-[calc(100vh-64px)] bg-background p-4">
         <div className="w-full max-w-md bg-card border border-subtle rounded-2xl p-8 shadow-sm">
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-foreground mb-2">Create your account</h1>
-            <p className="text-sm text-muted">Join Ansar AI  to start building</p>
+          <div className="mb-8 flex flex-col items-center text-center">
+            <BrandLogo
+              href="/"
+              iconSize={22}
+              textClassName="text-2xl"
+              className="justify-center"
+            />
+            <h1 className="text-2xl font-bold text-foreground mb-2 mt-4">Create your account</h1>
+            <p className="text-sm text-muted">Join Ansar AI to start building</p>
           </div>
 
           <form onSubmit={handleRegister} className="space-y-4">

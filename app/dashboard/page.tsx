@@ -58,6 +58,7 @@ import {
   type ProjectRecord,
 } from "@/lib/version-display";
 import { ProjectStatusChart } from "../components/dashboard/ProjectStatusChart";
+import { BrandLogo } from "../components/BrandLogo";
 
 type DashboardTab = "overview" | "projects" | "deployments" | "analytics" | "settings" | "resources";
 
@@ -511,7 +512,12 @@ export default function DashboardPage() {
   if (isAuthLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
-        <Loader2 className="animate-spin text-primary w-8 h-8" />
+        <div className="flex flex-col items-center gap-4">
+          <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border border-subtle bg-[#0b0d12] shadow-sm">
+            <img src="/logo.svg" alt="Ansar AI logo" className="h-10 w-10 object-contain" />
+          </div>
+          <Loader2 className="animate-spin text-primary w-8 h-8" />
+        </div>
       </div>
     );
   }
@@ -533,15 +539,12 @@ export default function DashboardPage() {
       >
         {/* Logo */}
         <div className="h-16 flex items-center px-6 border-b border-subtle shrink-0">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M8 2L14 6V14H2V6L8 2Z" stroke="white" strokeWidth="1.5" strokeLinejoin="round" fill="none" />
-                <rect x="6" y="9" width="4" height="5" rx="0.5" fill="white" />
-              </svg>
-            </div>
-            <span className="text-lg font-bold text-foreground">Ansar AI </span>
-          </Link>
+          <BrandLogo
+            href="/dashboard"
+            iconSize={18}
+            textClassName="text-lg"
+            className="min-w-0"
+          />
           <button
             className="ml-auto md:hidden text-muted hover:text-foreground"
             onClick={() => setIsMobileMenuOpen(false)}
@@ -932,7 +935,7 @@ export default function DashboardPage() {
                       placeholder="Search projects by name..."
                       value={projectSearch}
                       onChange={(e) => setProjectSearch(e.target.value)}
-                      className="w-full bg-surface border border-subtle rounded-lg pl-9 pr-4 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary text-foreground"
+                      className="w-full bg-surface border border-subtle rounded-lg pl-9 pr-4 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary/50 text-foreground"
                     />
                   </div>
 
@@ -1124,7 +1127,7 @@ export default function DashboardPage() {
                       placeholder="Search deployments by project, domain, or ID..."
                       value={deploymentSearch}
                       onChange={(e) => setDeploymentSearch(e.target.value)}
-                      className="w-full bg-surface border border-subtle rounded-lg pl-9 pr-4 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary text-foreground"
+                      className="w-full bg-surface border border-subtle rounded-lg pl-9 pr-4 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary/50 text-foreground"
                     />
                   </div>
 
@@ -1636,23 +1639,10 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl space-y-2 text-xs text-red-700 dark:text-red-300">
-              <p className="font-semibold">
-                Are you sure you want to delete &ldquo;{deleteTarget.name}&rdquo;?
-              </p>
-              <ul className="list-disc list-inside space-y-1 text-[11px] opacity-90">
-                <li>All website code files and source snapshots will be erased.</li>
-                <li>Full version history and chat conversations will be deleted.</li>
-                <li>Associated Cloudflare Pages live website will be taken down.</li>
-              </ul>
+            <div className="p-3 bg-red-500/10 text-red-600 rounded-lg text-xs flex items-center gap-2">
+              <AlertCircle size={14} />
+              <span>{deleteError}</span>
             </div>
-
-            {deleteError && (
-              <div className="p-3 bg-red-500/10 text-red-600 rounded-lg text-xs flex items-center gap-2">
-                <AlertCircle size={14} />
-                <span>{deleteError}</span>
-              </div>
-            )}
 
             <div className="flex justify-end gap-3 pt-2">
               <button

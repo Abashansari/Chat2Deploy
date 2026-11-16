@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import Link from "next/link";
+import { BrandLogo } from "./BrandLogo";
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -12,28 +13,11 @@ export default function Navbar() {
     <header className="w-full bg-background border-b border-subtle">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 16 16"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M8 2L14 6V14H2V6L8 2Z"
-                  stroke="white"
-                  strokeWidth="1.5"
-                  strokeLinejoin="round"
-                  fill="none"
-                />
-                <rect x="6" y="9" width="4" height="5" rx="0.5" fill="white" />
-              </svg>
-            </div>
-            <span className="text-lg font-bold text-foreground">Ansar AI </span>
-          </Link>
+          <BrandLogo
+            className="shrink-0"
+            iconSize={18}
+            textClassName="text-lg"
+          />
 
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-8">
@@ -61,12 +45,6 @@ export default function Navbar() {
             >
               Resources
             </Link>
-            {/* <Link
-              href="/support"
-              className="text-sm text-secondary hover:text-foreground transition-colors"
-            >
-              Support Us
-            </Link> */}
           </nav>
 
           {/* Desktop Auth */}

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Rocket, Loader2, CheckCircle2, ExternalLink, AlertCircle, X, History } from "lucide-react";
 import { ThemeToggle } from "../ThemeToggle";
 import { AuthAwareBackButton } from "../auth/AuthAwareBackButton";
+import { BrandLogo } from "../BrandLogo";
 import type { DeploymentStatus, DeploymentDetails } from "./types";
 
 interface WorkspaceHeaderProps {
@@ -48,6 +49,13 @@ export default function WorkspaceHeader({
         <div className="flex items-center gap-4">
           <AuthAwareBackButton />
           <div className="w-px h-4 bg-subtle mx-1"></div>
+          <BrandLogo
+            href={"/dashboard"}
+            showWordmark={false}
+            iconSize={16}
+            iconClassName="bg-background text-foreground ring-0 shadow-none"
+            className="p-1 rounded-md hover:bg-surface transition-colors"
+          />
           <span className="font-bold text-foreground text-lg">
             Workspace
           </span>

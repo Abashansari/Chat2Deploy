@@ -8,9 +8,14 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "SiteFlow - From creating website to host that you Love",
+  title: "Ansar AI | Build and Deploy Websites with AI",
   description:
-    "The easiest way to build and host websites. Start with building the website and host that you love.",
+    "The easiest way to build and host websites. Start with building the website and deploy with AI-powered workflows.",
+  icons: {
+    icon: "/logo.svg",
+    shortcut: "/logo.svg",
+    apple: "/logo.svg",
+  },
 };
 
 import { ThemeProvider } from "./components/ThemeProvider";
