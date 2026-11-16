@@ -61,12 +61,12 @@ export default function Navbar() {
             >
               Resources
             </Link>
-            <Link
+            {/* <Link
               href="/support"
               className="text-sm text-secondary hover:text-foreground transition-colors"
             >
               Support Us
-            </Link>
+            </Link> */}
           </nav>
 
           {/* Desktop Auth */}
