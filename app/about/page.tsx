@@ -21,9 +21,9 @@ import {
 } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "About Chat2Deploy — AI-Powered Website Creation & Edge Hosting",
+  title: "About Ansar AI  — AI-Powered Website Creation & Edge Hosting",
   description:
-    "Learn about Chat2Deploy, our mission to lower technical barriers to website creation, our natural-language AI generation workflow, and our global edge deployment infrastructure.",
+    "Learn about Ansar AI , our mission to lower technical barriers to website creation, our natural-language AI generation workflow, and our global edge deployment infrastructure.",
 };
 
 const WORKFLOW_STEPS = [
@@ -148,7 +148,7 @@ export default function AboutPage() {
             </h1>
 
             <p className="text-base md:text-lg text-muted max-w-2xl mx-auto mb-8 leading-relaxed">
-              Chat2Deploy bridges the gap between imagination and production. We harness generative AI to transform conversational prompts into clean web code, paired with instant preview and global edge hosting.
+              Ansar AI  bridges the gap between imagination and production. We harness generative AI to transform conversational prompts into clean web code, paired with instant preview and global edge hosting.
             </p>
 
             <div className="flex flex-wrap items-center justify-center gap-3">
@@ -186,7 +186,7 @@ export default function AboutPage() {
                     Building a modern website has traditionally required juggling multiple disparate systems: local code environments, CSS frameworks, version control repositories, DNS management, and cloud hosting consoles.
                   </p>
                   <p>
-                    <strong className="text-foreground">Chat2Deploy was created to remove these barriers.</strong> By combining state-of-the-art conversational AI models with a streamlined workspace and direct edge deployment pipelines, we enable anyone to turn their ideas into working websites in a matter of minutes.
+                    <strong className="text-foreground">Ansar AI  was created to remove these barriers.</strong> By combining state-of-the-art conversational AI models with a streamlined workspace and direct edge deployment pipelines, we enable anyone to turn their ideas into working websites in a matter of minutes.
                   </p>
                   <p>
                     Whether you are an experienced developer prototyping a concept or a student discovering web development, our goal is to let you focus on creativity, user experience, and iteration rather than wrestling with tooling.
@@ -243,7 +243,7 @@ export default function AboutPage() {
                 The Workflow
               </span>
               <h2 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight mb-3">
-                How Chat2Deploy Works
+                How Ansar AI  Works
               </h2>
               <p className="text-muted text-sm md:text-base max-w-xl mx-auto">
                 From initial conversation to live deployment in four simple, transparent steps.
@@ -312,7 +312,7 @@ export default function AboutPage() {
                 Community &amp; Users
               </span>
               <h2 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight mb-3">
-                Who Chat2Deploy Is Built For
+                Who Ansar AI  Is Built For
               </h2>
               <p className="text-muted text-sm md:text-base max-w-lg mx-auto">
                 Designed to support builders at every stage of their coding and creation journey.
@@ -335,7 +335,7 @@ export default function AboutPage() {
             <div className="p-6 bg-card border border-teal-500/30 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
                 <h4 className="text-sm font-bold text-foreground mb-1">
-                  Interested in contributing to Chat2Deploy?
+                  Interested in contributing to Ansar AI ?
                 </h4>
                 <p className="text-xs text-muted leading-relaxed">
                   Explore our Learner Contributor Program to work on real software tasks and gain collaborative development experience.

@@ -77,7 +77,7 @@ export default function ChatPanel({ messages, generationStatus, onGenerate }: Ch
             </div>
             <h3 className="text-lg font-bold text-foreground mb-2">What would you like to build?</h3>
             <p className="text-sm text-muted max-w-xs">
-              Describe the website you want and Chat2Deploy will generate it for you.
+              Describe the website you want and Ansar AI  will generate it for you.
             </p>
             <div className="mt-6 space-y-2 w-full max-w-xs">
               {[
@@ -102,14 +102,13 @@ export default function ChatPanel({ messages, generationStatus, onGenerate }: Ch
         {messages.map((msg) => (
           <div key={msg.id} className="space-y-2">
             <div className="text-[10px] font-semibold text-muted uppercase tracking-wider flex items-center gap-1.5">
-              {msg.role === "user" ? "You" : "Chat2Deploy"}
+              {msg.role === "user" ? "You" : "Ansar AI "}
             </div>
             <div
-              className={`p-3 rounded-lg border ${
-                msg.role === "user"
+              className={`p-3 rounded-lg border ${msg.role === "user"
                   ? "bg-surface border-subtle"
                   : "bg-transparent border-transparent px-0"
-              }`}
+                }`}
             >
               {msg.role === "user" ? (
                 <p className="text-sm text-foreground">{msg.content}</p>
@@ -161,7 +160,7 @@ export default function ChatPanel({ messages, generationStatus, onGenerate }: Ch
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask Chat2Deploy to build or modify..."
+            placeholder="Ask Ansar AI  to build or modify..."
             className="w-full bg-surface border border-subtle rounded-lg pl-4 pr-12 py-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all placeholder:text-muted"
             disabled={isGenerating}
           />

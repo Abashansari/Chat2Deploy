@@ -364,11 +364,10 @@ export default function CareersAdminClient({ initialAdminEmail }: CareersAdminCl
                         adminNotifications.map((n) => (
                           <div
                             key={n.id}
-                            className={`p-3 rounded-xl border text-xs transition-colors cursor-pointer ${
-                              n.isRead
+                            className={`p-3 rounded-xl border text-xs transition-colors cursor-pointer ${n.isRead
                                 ? "bg-muted/20 border-border/60 text-muted-foreground"
                                 : "bg-primary/5 border-primary/30 text-foreground"
-                            }`}
+                              }`}
                             onClick={() => {
                               handleMarkNotifRead(n.id);
                               if (n.relatedApplicationId) {
@@ -422,11 +421,10 @@ export default function CareersAdminClient({ initialAdminEmail }: CareersAdminCl
           {/* Action Feedback Banner */}
           {actionFeedback && (
             <div
-              className={`p-4 rounded-2xl flex items-center justify-between gap-3 animate-in fade-in ${
-                actionFeedback.type === "success"
+              className={`p-4 rounded-2xl flex items-center justify-between gap-3 animate-in fade-in ${actionFeedback.type === "success"
                   ? "bg-emerald-500/10 border border-emerald-500/30 text-emerald-400"
                   : "bg-rose-500/10 border border-rose-500/30 text-rose-400"
-              }`}
+                }`}
             >
               <div className="flex items-center gap-2 text-sm font-medium">
                 {actionFeedback.type === "success" ? <CheckCircle2 size={18} /> : <AlertTriangle size={18} />}
@@ -645,11 +643,9 @@ export default function CareersAdminClient({ initialAdminEmail }: CareersAdminCl
                   <div className="flex items-center gap-2">
                     <h3 className="text-xl font-bold text-foreground">{inspectApp.fullName}</h3>
                     <span
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
-                        STATUS_CONFIG[inspectApp.status]?.bgColor
-                      } ${STATUS_CONFIG[inspectApp.status]?.color} ${
-                        STATUS_CONFIG[inspectApp.status]?.borderColor
-                      }`}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${STATUS_CONFIG[inspectApp.status]?.bgColor
+                        } ${STATUS_CONFIG[inspectApp.status]?.color} ${STATUS_CONFIG[inspectApp.status]?.borderColor
+                        }`}
                     >
                       {inspectApp.status}
                     </span>
@@ -679,7 +675,7 @@ export default function CareersAdminClient({ initialAdminEmail }: CareersAdminCl
                         setDecisionModal({
                           app: inspectApp,
                           targetStatus: "Selected",
-                          notes: inspectApp.adminNotes || "Welcome to Chat2Deploy! Onboarding links and repo access will be provided shortly.",
+                          notes: inspectApp.adminNotes || "Welcome to Ansar AI ! Onboarding links and repo access will be provided shortly.",
                         })
                       }
                       className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-500 text-white text-xs font-semibold hover:bg-emerald-600 transition-colors shadow-sm"
@@ -870,13 +866,12 @@ export default function CareersAdminClient({ initialAdminEmail }: CareersAdminCl
                   You are changing the status of{" "}
                   <strong className="text-foreground">{decisionModal.app.fullName}</strong> to{" "}
                   <span
-                    className={`font-semibold ${
-                      decisionModal.targetStatus === "Selected"
+                    className={`font-semibold ${decisionModal.targetStatus === "Selected"
                         ? "text-emerald-400"
                         : decisionModal.targetStatus === "Rejected"
-                        ? "text-rose-400"
-                        : "text-cyan-400"
-                    }`}
+                          ? "text-rose-400"
+                          : "text-cyan-400"
+                      }`}
                   >
                     &quot;{decisionModal.targetStatus}&quot;
                   </span>
@@ -910,13 +905,12 @@ export default function CareersAdminClient({ initialAdminEmail }: CareersAdminCl
                 <button
                   onClick={handleConfirmDecision}
                   disabled={isSubmittingDecision}
-                  className={`inline-flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold text-white transition-all shadow-md disabled:opacity-50 ${
-                    decisionModal.targetStatus === "Selected"
+                  className={`inline-flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold text-white transition-all shadow-md disabled:opacity-50 ${decisionModal.targetStatus === "Selected"
                       ? "bg-emerald-600 hover:bg-emerald-500"
                       : decisionModal.targetStatus === "Rejected"
-                      ? "bg-rose-600 hover:bg-rose-500"
-                      : "bg-cyan-600 hover:bg-cyan-500"
-                  }`}
+                        ? "bg-rose-600 hover:bg-rose-500"
+                        : "bg-cyan-600 hover:bg-cyan-500"
+                    }`}
                 >
                   {isSubmittingDecision && <Loader2 size={13} className="animate-spin" />}
                   <span>Confirm Decision</span>

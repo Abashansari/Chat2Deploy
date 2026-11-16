@@ -33,8 +33,8 @@ const FAQS: FAQItem[] = [
   {
     id: "how-does-it-work",
     category: "ai",
-    question: "How does Chat2Deploy generate websites from prompts?",
-    answer: "Chat2Deploy utilizes Google Gemini's multimodal intelligence paired with a specialized web-generation architecture. When you submit a prompt, the engine plans the layout, generates semantic HTML5 structure, custom CSS styling with modern design tokens, and modular JavaScript logic. The files are rendered inside an isolated live preview sandbox immediately.",
+    question: "How does Ansar AI  generate websites from prompts?",
+    answer: "Ansar AI  utilizes Google Gemini's multimodal intelligence paired with a specialized web-generation architecture. When you submit a prompt, the engine plans the layout, generates semantic HTML5 structure, custom CSS styling with modern design tokens, and modular JavaScript logic. The files are rendered inside an isolated live preview sandbox immediately.",
     actionLink: {
       label: "Read Documentation",
       href: "/docs",
@@ -50,7 +50,7 @@ const FAQS: FAQItem[] = [
     id: "incremental-modifications",
     category: "ai",
     question: "Can I modify my website iteratively without regenerating everything?",
-    answer: "Yes! In the Workspace chat panel, you can ask for surgical modifications—such as 'change the button color to orange', 'add a contact form section', or 'increase font contrast'. Chat2Deploy evaluates your existing files and modifies only the necessary elements while preserving your current layout.",
+    answer: "Yes! In the Workspace chat panel, you can ask for surgical modifications—such as 'change the button color to orange', 'add a contact form section', or 'increase font contrast'. Ansar AI  evaluates your existing files and modifies only the necessary elements while preserving your current layout.",
     actionLink: {
       label: "View Iterative Editing Guide",
       href: "/guides#iterative-modification",
@@ -82,7 +82,7 @@ const FAQS: FAQItem[] = [
     id: "version-snapshots",
     category: "versions",
     question: "How does automatic versioning work?",
-    answer: "Chat2Deploy automatically captures an immutable snapshot of your project every time a prompt is applied or a save is triggered. Each snapshot records the version number (v1, v2, v3), timestamp, and the prompt that generated it.",
+    answer: "Ansar AI  automatically captures an immutable snapshot of your project every time a prompt is applied or a save is triggered. Each snapshot records the version number (v1, v2, v3), timestamp, and the prompt that generated it.",
     actionLink: {
       label: "Version Control Docs",
       href: "/docs#versioning",
@@ -203,11 +203,10 @@ export default function FAQPage() {
               <button
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id)}
-                className={`px-3.5 py-1.5 text-xs font-medium rounded-full transition-colors whitespace-nowrap ${
-                  activeCategory === cat.id
+                className={`px-3.5 py-1.5 text-xs font-medium rounded-full transition-colors whitespace-nowrap ${activeCategory === cat.id
                     ? "bg-primary text-white"
                     : "bg-card border border-subtle text-secondary hover:text-foreground hover:border-primary/30"
-                }`}
+                  }`}
               >
                 {cat.label}
               </button>
@@ -238,9 +237,8 @@ export default function FAQPage() {
                 return (
                   <div
                     key={faq.id}
-                    className={`bg-card border rounded-xl transition-all overflow-hidden ${
-                      isOpen ? "border-primary/40 shadow-sm" : "border-subtle hover:border-primary/20"
-                    }`}
+                    className={`bg-card border rounded-xl transition-all overflow-hidden ${isOpen ? "border-primary/40 shadow-sm" : "border-subtle hover:border-primary/20"
+                      }`}
                   >
                     <button
                       onClick={() => toggleItem(faq.id)}
@@ -252,9 +250,8 @@ export default function FAQPage() {
                       </span>
                       <ChevronDown
                         size={18}
-                        className={`text-muted shrink-0 transition-transform duration-200 ${
-                          isOpen ? "rotate-180 text-primary" : ""
-                        }`}
+                        className={`text-muted shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180 text-primary" : ""
+                          }`}
                       />
                     </button>
 
@@ -287,7 +284,7 @@ export default function FAQPage() {
             </div>
             <h3 className="text-base font-bold text-foreground">Still have questions?</h3>
             <p className="text-xs text-muted max-w-md mx-auto leading-relaxed">
-              Explore our step-by-step guides, check out full platform documentation, or learn more about contributing to Chat2Deploy.
+              Explore our step-by-step guides, check out full platform documentation, or learn more about contributing to Ansar AI .
             </p>
             <div className="flex items-center justify-center gap-3 pt-2">
               <Link

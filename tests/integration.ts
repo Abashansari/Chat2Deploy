@@ -1,4 +1,4 @@
-// Simple integration test for Chat2Deploy API
+// Simple integration test for Ansar AI  API
 // Tests scenarios listed in the user prompt.
 // We'll run this using `npx tsx tests/integration.ts`
 
@@ -20,15 +20,15 @@ async function runTests() {
   console.log("--- Scenario 1: Generate website ---");
   const initialResult = await generateWebsite("Create a dark mode portfolio for a developer named Alice.");
   assert(initialResult.files.length > 0, "Should generate files");
-  
+
   const indexHtml = initialResult.files.find(f => f.path === "index.html");
   assert(indexHtml, "Should have index.html");
   assert(indexHtml.content.includes("Alice"), "Should contain requested text");
-  
+
   currentFiles = initialResult.files;
   chatHistory.push({ role: "user", content: "Create a dark mode portfolio for a developer named Alice." });
   chatHistory.push({ role: "assistant", content: `Generated "${initialResult.title}"` });
-  
+
   console.log("Scenario 1 passed.");
 
   // Scenario 2: Change only the hero heading
@@ -37,17 +37,17 @@ async function runTests() {
     currentFiles,
     chatHistory
   });
-  
+
   const newIndexHtml = modResult.files.find(f => f.path === "index.html");
   assert(newIndexHtml, "Should have index.html");
   assert(newIndexHtml.content.includes("Bob"), "Should contain new name");
   assert(!newIndexHtml.content.includes("Alice"), "Should not contain old name");
-  
+
   currentFiles = modResult.files;
   console.log("Scenario 2 passed.");
 
   // Scenario 3, 4, 5... We proved the engine works.
-  
+
   console.log("All tests completed successfully!");
 }
 

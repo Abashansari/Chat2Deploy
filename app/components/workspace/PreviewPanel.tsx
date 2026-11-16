@@ -201,33 +201,30 @@ export default function PreviewPanel({
           <div className="flex items-center gap-1 border border-subtle rounded-md p-1 bg-surface">
             <button
               onClick={() => setDevice("Desktop")}
-              className={`p-1 rounded-sm flex items-center gap-1.5 transition-colors ${
-                device === "Desktop"
+              className={`p-1 rounded-sm flex items-center gap-1.5 transition-colors ${device === "Desktop"
                   ? "bg-background text-primary shadow-sm"
                   : "text-muted hover:text-foreground"
-              }`}
+                }`}
             >
               <Monitor size={14} />
               <span className="text-xs font-medium pr-1">Desktop</span>
             </button>
             <button
               onClick={() => setDevice("Tablet")}
-              className={`p-1 rounded-sm flex items-center gap-1.5 transition-colors ${
-                device === "Tablet"
+              className={`p-1 rounded-sm flex items-center gap-1.5 transition-colors ${device === "Tablet"
                   ? "bg-background text-primary shadow-sm"
                   : "text-muted hover:text-foreground"
-              }`}
+                }`}
             >
               <Tablet size={14} />
               <span className="text-xs font-medium pr-1">Tablet</span>
             </button>
             <button
               onClick={() => setDevice("Mobile")}
-              className={`p-1 rounded-sm flex items-center gap-1.5 transition-colors ${
-                device === "Mobile"
+              className={`p-1 rounded-sm flex items-center gap-1.5 transition-colors ${device === "Mobile"
                   ? "bg-background text-primary shadow-sm"
                   : "text-muted hover:text-foreground"
-              }`}
+                }`}
             >
               <Smartphone size={14} />
               <span className="text-xs font-medium pr-1">Mobile</span>
@@ -263,8 +260,8 @@ export default function PreviewPanel({
               {deploymentStatus === "success" && deploymentDetails?.url
                 ? deploymentDetails.url
                 : hasFiles
-                ? `https://preview.chat2deploy.dev/${projectTitle.toLowerCase().replace(/\s+/g, "-")}`
-                : "https://preview.chat2deploy.dev"}
+                  ? `https://preview.Ansar AI .dev/${projectTitle.toLowerCase().replace(/\s+/g, "-")}`
+                  : "https://preview.Ansar AI .dev"}
             </div>
           </div>
 

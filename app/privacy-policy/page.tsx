@@ -5,9 +5,9 @@ import Footer from "../components/Footer";
 import { ShieldCheck, ChevronRight, AlertCircle, Lock, Server, FileText } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — Chat2Deploy",
+  title: "Privacy Policy — Ansar AI ",
   description:
-    "Review Chat2Deploy's Privacy Policy. Understand what data we collect, how it is processed by our AI and hosting providers, and how your projects and accounts are handled.",
+    "Review Ansar AI 's Privacy Policy. Understand what data we collect, how it is processed by our AI and hosting providers, and how your projects and accounts are handled.",
 };
 
 export default function PrivacyPolicyPage() {
@@ -62,7 +62,7 @@ export default function PrivacyPolicyPage() {
             <AlertCircle size={18} className="text-amber-400 shrink-0 mt-0.5" />
             <div className="text-xs text-muted leading-relaxed">
               <strong className="text-foreground block mb-0.5">Operational Draft Notice:</strong>
-              This Privacy Policy documents the actual technical architecture, database schemas, and third-party data flows currently implemented in Chat2Deploy. It is provided for user transparency and should be reviewed by legal counsel before formal commercial deployment.
+              This Privacy Policy documents the actual technical architecture, database schemas, and third-party data flows currently implemented in Ansar AI . It is provided for user transparency and should be reviewed by legal counsel before formal commercial deployment.
             </div>
           </div>
 
@@ -93,10 +93,10 @@ export default function PrivacyPolicyPage() {
                 1. Overview &amp; Operational Scope
               </h2>
               <p className="text-muted leading-relaxed mb-3">
-                Chat2Deploy is a web application that enables users to generate, modify, and publish websites using natural language prompts powered by artificial intelligence.
+                Ansar AI  is a web application that enables users to generate, modify, and publish websites using natural language prompts powered by artificial intelligence.
               </p>
               <p className="text-muted leading-relaxed">
-                This Privacy Policy explains how Chat2Deploy collects, stores, processes, and protects your personal data when you interact with our website, create an account, generate websites, submit inquiries, or apply to our Learner Contributor Program.
+                This Privacy Policy explains how Ansar AI  collects, stores, processes, and protects your personal data when you interact with our website, create an account, generate websites, submit inquiries, or apply to our Learner Contributor Program.
               </p>
             </section>
 
@@ -186,7 +186,7 @@ export default function PrivacyPolicyPage() {
                 4. Third-Party Processors &amp; Providers
               </h2>
               <p className="text-muted leading-relaxed mb-4">
-                Chat2Deploy does not sell your personal data. We utilize vetted infrastructure providers to deliver our core features. Data processed by these services is subject to their respective terms and privacy policies:
+                Ansar AI  does not sell your personal data. We utilize vetted infrastructure providers to deliver our core features. Data processed by these services is subject to their respective terms and privacy policies:
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -251,7 +251,7 @@ export default function PrivacyPolicyPage() {
                 6. Project Data &amp; Public Edge Deployments
               </h2>
               <p className="text-muted leading-relaxed mb-3">
-                Projects you create within Chat2Deploy remain private to your authenticated account while you are editing them in the workspace.
+                Projects you create within Ansar AI  remain private to your authenticated account while you are editing them in the workspace.
               </p>
               <p className="text-muted leading-relaxed">
                 However, when you explicitly trigger the <strong className="text-foreground">&ldquo;Deploy&rdquo;</strong> action, the resulting static files are published to a public Cloudflare Pages URL. Anyone with that public URL will be able to view the published website. You can manage or delete your deployments directly from the project dashboard.
@@ -271,7 +271,7 @@ export default function PrivacyPolicyPage() {
                   • <strong className="text-foreground">Theme &amp; UI Preferences:</strong> We use browser localStorage to remember your light/dark theme preference across sessions.
                 </p>
                 <p>
-                  • <strong className="text-foreground">No Third-Party Advertising Trackers:</strong> Chat2Deploy does not sell user ad-tracking profiles or install third-party tracking pixels for behavioral advertising.
+                  • <strong className="text-foreground">No Third-Party Advertising Trackers:</strong> Ansar AI  does not sell user ad-tracking profiles or install third-party tracking pixels for behavioral advertising.
                 </p>
               </div>
             </section>
@@ -324,7 +324,7 @@ export default function PrivacyPolicyPage() {
               </p>
               <div className="p-4 bg-card border border-subtle rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
-                  <p className="text-xs font-semibold text-foreground">Chat2Deploy Privacy &amp; Support Team</p>
+                  <p className="text-xs font-semibold text-foreground">Ansar AI  Privacy &amp; Support Team</p>
                   <p className="text-xs text-muted">Submit an inquiry via our verified contact form.</p>
                 </div>
                 <Link

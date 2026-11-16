@@ -6,9 +6,9 @@ import ContactForm from "./ContactForm";
 import { ChevronRight, Mail } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Contact Us — Chat2Deploy Support & Inquiries",
+  title: "Contact Us — Ansar AI  Support & Inquiries",
   description:
-    "Get in touch with the Chat2Deploy team for platform support, technical questions, bug reports, and Contributor Program inquiries.",
+    "Get in touch with the Ansar AI  team for platform support, technical questions, bug reports, and Contributor Program inquiries.",
 };
 
 export default function ContactPage() {
@@ -33,7 +33,7 @@ export default function ContactPage() {
               We&apos;re Here to Help
             </span>
             <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-4">
-              Get in Touch with Chat2Deploy
+              Get in Touch with Ansar AI
             </h1>
             <p className="text-muted text-sm md:text-base leading-relaxed">
               Have a question, feedback on website generation, edge deployment assistance, or inquiries about our programs? Send us a message below.

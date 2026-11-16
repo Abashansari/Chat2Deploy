@@ -28,7 +28,7 @@ function buildAdminNotificationHtml(msg: ContactMessageData): string {
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>New Contact Message — Chat2Deploy</title>
+  <title>New Contact Message — Ansar AI </title>
 </head>
 <body style="margin:0;padding:0;background-color:#09090b;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#f4f4f5;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#09090b;padding:32px 16px;">
@@ -38,7 +38,7 @@ function buildAdminNotificationHtml(msg: ContactMessageData): string {
           <tr>
             <td style="background:linear-gradient(135deg,#09090b 0%,#18181b 100%);padding:24px 32px;border-bottom:2px solid #e8633e;">
               <span style="display:inline-block;background-color:#e8633e;color:#ffffff;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;padding:3px 8px;border-radius:4px;margin-bottom:8px;">New Message</span>
-              <h1 style="margin:4px 0 0;font-size:20px;font-weight:700;color:#f4f4f5;">Chat2Deploy Contact Inquiry</h1>
+              <h1 style="margin:4px 0 0;font-size:20px;font-weight:700;color:#f4f4f5;">Ansar AI  Contact Inquiry</h1>
             </td>
           </tr>
           <tr>
@@ -73,7 +73,7 @@ function buildAdminNotificationHtml(msg: ContactMessageData): string {
 }
 
 function buildAdminNotificationPlainText(msg: ContactMessageData): string {
-  return `=== NEW CHAT2DEPLOY CONTACT MESSAGE ===
+  return `=== NEW Ansar AI  CONTACT MESSAGE ===
 From: ${msg.fullName} <${msg.email}>
 Date: ${msg.createdAt}
 Subject: ${msg.subject}
@@ -92,7 +92,7 @@ function buildSenderConfirmationHtml(fullName: string, subject: string): string 
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Message Received — Chat2Deploy</title>
+  <title>Message Received — Ansar AI </title>
 </head>
 <body style="margin:0;padding:0;background-color:#0c0c0c;font-family:'Segoe UI',Arial,Helvetica,sans-serif;color:#e5e5e5;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#0c0c0c;padding:32px 16px;">
@@ -101,20 +101,20 @@ function buildSenderConfirmationHtml(fullName: string, subject: string): string 
         <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#1c1c1c;border-radius:12px;overflow:hidden;border:1px solid #222222;">
           <tr>
             <td style="padding:28px 32px;border-bottom:2px solid #e8633e;">
-              <span style="font-size:18px;font-weight:700;color:#ffffff;">Chat2Deploy Support</span>
+              <span style="font-size:18px;font-weight:700;color:#ffffff;">Ansar AI  Support</span>
             </td>
           </tr>
           <tr>
             <td style="padding:28px 32px;">
               <h1 style="margin:0 0 16px;font-size:20px;font-weight:700;color:#ffffff;">We Received Your Message</h1>
               <p style="margin:0 0 14px;font-size:14px;color:#d1d5db;line-height:1.6;">Hi ${escapeHtml(fullName)},</p>
-              <p style="margin:0 0 14px;font-size:14px;color:#d1d5db;line-height:1.6;">Thank you for contacting Chat2Deploy regarding "<strong>${escapeHtml(subject)}</strong>". We have received your inquiry and our team will review it as soon as possible.</p>
-              <p style="margin:20px 0 0;font-size:14px;color:#d1d5db;line-height:1.6;">Best regards,<br><strong>Chat2Deploy Team</strong></p>
+              <p style="margin:0 0 14px;font-size:14px;color:#d1d5db;line-height:1.6;">Thank you for contacting Ansar AI  regarding "<strong>${escapeHtml(subject)}</strong>". We have received your inquiry and our team will review it as soon as possible.</p>
+              <p style="margin:20px 0 0;font-size:14px;color:#d1d5db;line-height:1.6;">Best regards,<br><strong>Ansar AI  Team</strong></p>
             </td>
           </tr>
           <tr>
             <td style="background-color:#0c0c0c;padding:16px 32px;border-top:1px solid #222222;">
-              <p style="margin:0;font-size:11px;color:#6b7280;text-align:center;">© ${year} Chat2Deploy. All rights reserved.</p>
+              <p style="margin:0;font-size:11px;color:#6b7280;text-align:center;">© ${year} Ansar AI . All rights reserved.</p>
             </td>
           </tr>
         </table>
@@ -128,7 +128,7 @@ function buildSenderConfirmationHtml(fullName: string, subject: string): string 
 export async function sendContactEmail(msg: ContactMessageData): Promise<{ sent: boolean; error?: string }> {
   const apiKey = process.env.RESEND_API_KEY;
   const adminEmail = process.env.CONTACT_ADMIN_EMAIL || process.env.CAREERS_ADMIN_EMAIL || "ansariabash2004@gmail.com";
-  const fromEmail = process.env.CONTACT_FROM_EMAIL || process.env.CAREERS_FROM_EMAIL || "Chat2Deploy <onboarding@resend.dev>";
+  const fromEmail = process.env.CONTACT_FROM_EMAIL || process.env.CAREERS_FROM_EMAIL || "Ansar AI  <onboarding@resend.dev>";
 
   if (!apiKey) {
     console.log(`[contact-email] RESEND_API_KEY not configured. Message logged to console for ${adminEmail}:`);
@@ -142,7 +142,7 @@ export async function sendContactEmail(msg: ContactMessageData): Promise<{ sent:
       from: fromEmail,
       to: [adminEmail],
       reply_to: msg.email,
-      subject: `[Chat2Deploy Contact] ${msg.subject} (from ${msg.fullName})`,
+      subject: `[Ansar AI  Contact] ${msg.subject} (from ${msg.fullName})`,
       html: buildAdminNotificationHtml(msg),
       text: buildAdminNotificationPlainText(msg),
     };
@@ -173,9 +173,9 @@ export async function sendContactEmail(msg: ContactMessageData): Promise<{ sent:
         body: JSON.stringify({
           from: fromEmail,
           to: [msg.email],
-          subject: `We Received Your Message: ${msg.subject} — Chat2Deploy`,
+          subject: `We Received Your Message: ${msg.subject} — Ansar AI `,
           html: buildSenderConfirmationHtml(msg.fullName, msg.subject),
-          text: `Hi ${msg.fullName},\n\nThank you for reaching out to Chat2Deploy. We have received your message regarding "${msg.subject}" and will respond shortly.\n\nBest regards,\nChat2Deploy Team`,
+          text: `Hi ${msg.fullName},\n\nThank you for reaching out to Ansar AI . We have received your message regarding "${msg.subject}" and will respond shortly.\n\nBest regards,\nAnsar AI  Team`,
         }),
       });
     } catch {

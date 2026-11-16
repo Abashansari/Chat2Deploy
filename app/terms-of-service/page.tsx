@@ -5,9 +5,9 @@ import Footer from "../components/Footer";
 import { FileText, ChevronRight, AlertCircle, ShieldAlert, CheckCircle2 } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Terms of Service — Chat2Deploy",
+  title: "Terms of Service — Ansar AI ",
   description:
-    "Read the Terms of Service for Chat2Deploy. Learn about user responsibilities, AI generation guidelines, acceptable use, edge hosting limitations, and Contributor Program terms.",
+    "Read the Terms of Service for Ansar AI . Learn about user responsibilities, AI generation guidelines, acceptable use, edge hosting limitations, and Contributor Program terms.",
 };
 
 export default function TermsOfServicePage() {
@@ -62,7 +62,7 @@ export default function TermsOfServicePage() {
             <AlertCircle size={18} className="text-amber-400 shrink-0 mt-0.5" />
             <div className="text-xs text-muted leading-relaxed">
               <strong className="text-foreground block mb-0.5">Operational Draft Notice:</strong>
-              These Terms of Service outline the current operating policies, AI generation safeguards, and hosting conditions for Chat2Deploy. They reflect the actual system functionality and should be reviewed by legal counsel prior to formal commercial deployment.
+              These Terms of Service outline the current operating policies, AI generation safeguards, and hosting conditions for Ansar AI . They reflect the actual system functionality and should be reviewed by legal counsel prior to formal commercial deployment.
             </div>
           </div>
 
@@ -93,10 +93,10 @@ export default function TermsOfServicePage() {
                 1. Acceptance of Terms
               </h2>
               <p className="text-muted leading-relaxed mb-3">
-                By visiting, accessing, or using Chat2Deploy (&ldquo;the Platform&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;), you acknowledge that you have read, understood, and agree to be bound by these Terms of Service. If you do not agree to these terms, you must discontinue using the platform.
+                By visiting, accessing, or using Ansar AI  (&ldquo;the Platform&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;), you acknowledge that you have read, understood, and agree to be bound by these Terms of Service. If you do not agree to these terms, you must discontinue using the platform.
               </p>
               <p className="text-muted leading-relaxed">
-                Your use of Chat2Deploy is also governed by our{" "}
+                Your use of Ansar AI  is also governed by our{" "}
                 <Link href="/privacy-policy" className="text-primary underline">
                   Privacy Policy
                 </Link>
@@ -110,7 +110,7 @@ export default function TermsOfServicePage() {
                 2. Eligibility &amp; Account Security
               </h2>
               <p className="text-muted leading-relaxed mb-3">
-                You must be at least 13 years old (or the legal age of digital consent in your jurisdiction) to use Chat2Deploy.
+                You must be at least 13 years old (or the legal age of digital consent in your jurisdiction) to use Ansar AI .
               </p>
               <p className="text-muted leading-relaxed">
                 When you create an account, you agree to provide accurate information and keep your credentials secure. You are solely responsible for all activities and project generations occurring under your account. If you suspect unauthorized access, you must notify us immediately via our <Link href="/contact" className="text-primary underline">Contact page</Link>.
@@ -123,7 +123,7 @@ export default function TermsOfServicePage() {
                 3. Platform Description &amp; Capabilities
               </h2>
               <p className="text-muted leading-relaxed mb-3">
-                Chat2Deploy provides an integrated workspace where users can:
+                Ansar AI  provides an integrated workspace where users can:
               </p>
               <ul className="space-y-1.5 text-xs text-muted leading-relaxed list-disc pl-5 mb-3">
                 <li>Submit natural-language prompts to generate website code (HTML, CSS, and JavaScript).</li>
@@ -143,7 +143,7 @@ export default function TermsOfServicePage() {
                 4. AI-Generated Output &amp; User Review
               </h2>
               <p className="text-muted leading-relaxed mb-3">
-                Chat2Deploy utilizes Google Gemini and third-party large language models to produce web code. Generative artificial intelligence is an evolving technology and outputs are probabilistic in nature.
+                Ansar AI  utilizes Google Gemini and third-party large language models to produce web code. Generative artificial intelligence is an evolving technology and outputs are probabilistic in nature.
               </p>
               <div className="p-4 bg-card border border-subtle rounded-xl space-y-2 mb-3">
                 <p className="text-xs text-foreground font-semibold">Important User Responsibilities:</p>
@@ -162,13 +162,13 @@ export default function TermsOfServicePage() {
                 5. Intellectual Property &amp; Ownership
               </h2>
               <p className="text-muted leading-relaxed mb-3">
-                • <strong className="text-foreground">Your Prompts &amp; Content:</strong> You retain ownership of the original text prompts, descriptions, and uploaded assets you provide to Chat2Deploy.
+                • <strong className="text-foreground">Your Prompts &amp; Content:</strong> You retain ownership of the original text prompts, descriptions, and uploaded assets you provide to Ansar AI .
               </p>
               <p className="text-muted leading-relaxed mb-3">
                 • <strong className="text-foreground">Generated Code:</strong> To the maximum extent permitted by applicable law and subject to the underlying terms of our AI providers (such as Google Generative AI), you may use, modify, export, and host the code generated for your projects.
               </p>
               <p className="text-muted leading-relaxed">
-                • <strong className="text-foreground">Chat2Deploy Platform IP:</strong> The Chat2Deploy name, logo, UI designs, editor layout, database schemas, and proprietary backend orchestration code remain the exclusive intellectual property of Chat2Deploy.
+                • <strong className="text-foreground">Ansar AI  Platform IP:</strong> The Ansar AI  name, logo, UI designs, editor layout, database schemas, and proprietary backend orchestration code remain the exclusive intellectual property of Ansar AI .
               </p>
             </section>
 
@@ -178,7 +178,7 @@ export default function TermsOfServicePage() {
                 6. Acceptable Use &amp; Prohibited Activities
               </h2>
               <p className="text-muted leading-relaxed mb-3">
-                You agree not to misuse Chat2Deploy or use it for harmful purposes. You must not:
+                You agree not to misuse Ansar AI  or use it for harmful purposes. You must not:
               </p>
               <ul className="space-y-1.5 text-xs text-muted leading-relaxed list-disc pl-5">
                 <li>Generate or host phishing websites, credential harvesters, scams, or fraudulent landing pages.</li>
@@ -224,7 +224,7 @@ export default function TermsOfServicePage() {
                   Program Disclosures &amp; Clarifications
                 </div>
                 <p className="text-xs text-foreground/90 leading-relaxed">
-                  Chat2Deploy offers a Learner Contributor Program to provide students and learners with practical exposure to software development workflows. The following terms govern participation in this program:
+                  Ansar AI  offers a Learner Contributor Program to provide students and learners with practical exposure to software development workflows. The following terms govern participation in this program:
                 </p>
                 <ul className="space-y-2 text-xs text-muted leading-relaxed list-disc pl-5">
                   <li>
@@ -249,10 +249,10 @@ export default function TermsOfServicePage() {
                 9. Disclaimers &amp; Limitation of Liability
               </h2>
               <p className="text-muted leading-relaxed mb-3">
-                TO THE FULLEST EXTENT PERMITTED BY LAW, CHAT2DEPLOY AND ITS OPERATORS PROVIDE THE SERVICE &ldquo;AS IS&rdquo; AND &ldquo;AS AVAILABLE&rdquo; WITHOUT ANY WARRANTIES OF ANY KIND, WHETHER EXPRESS, IMPLIED, STATUTORY, OR OTHERWISE, INCLUDING WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT.
+                TO THE FULLEST EXTENT PERMITTED BY LAW, Ansar AI  AND ITS OPERATORS PROVIDE THE SERVICE &ldquo;AS IS&rdquo; AND &ldquo;AS AVAILABLE&rdquo; WITHOUT ANY WARRANTIES OF ANY KIND, WHETHER EXPRESS, IMPLIED, STATUTORY, OR OTHERWISE, INCLUDING WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT.
               </p>
               <p className="text-muted leading-relaxed">
-                IN NO EVENT SHALL CHAT2DEPLOY BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING LOSS OF PROFITS, DATA LOSS, INTERRUPTION OF BUSINESS, OR THIRD-PARTY HOSTING OUTAGES, ARISING FROM YOUR USE OR INABILITY TO USE THE PLATFORM.
+                IN NO EVENT SHALL Ansar AI  BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING LOSS OF PROFITS, DATA LOSS, INTERRUPTION OF BUSINESS, OR THIRD-PARTY HOSTING OUTAGES, ARISING FROM YOUR USE OR INABILITY TO USE THE PLATFORM.
               </p>
             </section>
 
@@ -269,7 +269,7 @@ export default function TermsOfServicePage() {
               </p>
               <div className="p-4 bg-card border border-subtle rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
-                  <p className="text-xs font-semibold text-foreground">Chat2Deploy Inquiries</p>
+                  <p className="text-xs font-semibold text-foreground">Ansar AI  Inquiries</p>
                   <p className="text-xs text-muted">Submit questions via our official contact form.</p>
                 </div>
                 <Link

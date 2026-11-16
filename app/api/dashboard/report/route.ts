@@ -206,14 +206,14 @@ export async function GET() {
     // 8. Generate PDF binary buffer
     const pdfBuffer = await generateAnalyticsPdfReport(reportData);
 
-    // 9. Format meaningful filename (e.g., Gajala-report-YYYY-MM-DD.pdf or Chat2Deploy-report-YYYY-MM-DD.pdf)
+    // 9. Format meaningful filename (e.g., Gajala-report-YYYY-MM-DD.pdf or Ansar AI -report-YYYY-MM-DD.pdf)
     const rawName =
       (user.user_metadata?.full_name as string) ||
       (user.email ? user.email.split("@")[0] : "User");
 
     const sanitizedName = rawName.replace(/[^a-zA-Z0-9_-]/g, "");
     const dateFormatted = new Date().toISOString().split("T")[0];
-    const filename = `${sanitizedName || "Chat2Deploy"}-report-${dateFormatted}.pdf`;
+    const filename = `${sanitizedName || "Ansar AI "}-report-${dateFormatted}.pdf`;
 
     return new NextResponse(new Uint8Array(pdfBuffer), {
       status: 200,

@@ -19,10 +19,10 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) return;
-    
+
     setIsLoading(true);
     setError(null);
-    
+
     const { error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -45,9 +45,9 @@ export default function LoginPage() {
         <div className="w-full max-w-md bg-card border border-subtle rounded-2xl p-8 shadow-sm">
           <div className="text-center mb-8">
             <h1 className="text-2xl font-bold text-foreground mb-2">Welcome back</h1>
-            <p className="text-sm text-muted">Log in to your Chat2Deploy account</p>
+            <p className="text-sm text-muted">Log in to your Ansar AI  account</p>
           </div>
-          
+
           <form onSubmit={handleLogin} className="space-y-4">
             {error && (
               <div className="p-3 bg-red-500/10 border border-red-500/50 rounded-lg text-sm text-red-500 text-center">
@@ -56,8 +56,8 @@ export default function LoginPage() {
             )}
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground block">Email</label>
-              <input 
-                type="email" 
+              <input
+                type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -70,8 +70,8 @@ export default function LoginPage() {
                 <label className="text-sm font-medium text-foreground block">Password</label>
                 <Link href="/forgot-password" className="text-xs text-primary hover:underline">Forgot password?</Link>
               </div>
-              <input 
-                type="password" 
+              <input
+                type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -79,21 +79,21 @@ export default function LoginPage() {
                 placeholder="••••••••"
               />
             </div>
-            
+
             <div className="flex items-center gap-2 py-2">
               <input type="checkbox" id="remember" className="rounded border-subtle bg-surface text-primary focus:ring-primary" />
               <label htmlFor="remember" className="text-sm text-muted">Remember me</label>
             </div>
-            
-            <button 
-              type="submit" 
+
+            <button
+              type="submit"
               disabled={isLoading || !email || !password}
               className="w-full flex items-center justify-center py-2.5 px-4 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors disabled:opacity-70 disabled:cursor-not-allowed mt-2"
             >
               {isLoading ? <Loader2 size={18} className="animate-spin" /> : "Login"}
             </button>
           </form>
-          
+
           <div className="mt-8 text-center text-sm text-muted">
             Don&apos;t have an account? <Link href="/register" className="text-primary hover:underline font-medium">Create account</Link>
           </div>

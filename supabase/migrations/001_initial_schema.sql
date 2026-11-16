@@ -1,4 +1,4 @@
--- Complete Supabase Schema Setup for Chat2Deploy
+-- Complete Supabase Schema Setup for Ansar AI 
 -- This script contains all necessary tables, policies, and triggers.
 -- Run this in your Supabase SQL Editor to resolve missing table errors.
 

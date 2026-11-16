@@ -173,7 +173,7 @@ export function generateAnalyticsPdfReport(data: ReportData): Promise<Buffer> {
         .fontSize(18)
         .fillColor("#ffffff")
         .font("Helvetica-Bold")
-        .text("Chat2Deploy", margin + 18, 55, { continued: true })
+        .text("Ansar AI ", margin + 18, 55, { continued: true })
         .fontSize(10)
         .fillColor("#38bdf8")
         .font("Helvetica-Bold")
@@ -560,7 +560,7 @@ export function generateAnalyticsPdfReport(data: ReportData): Promise<Buffer> {
             .fontSize(7.5)
             .fillColor("#94a3b8")
             .font("Helvetica")
-            .text("Chat2Deploy • Project & Deployment Report", margin, 22, { width: contentWidth / 2 });
+            .text("Ansar AI  • Project & Deployment Report", margin, 22, { width: contentWidth / 2 });
 
           doc
             .fontSize(7.5)

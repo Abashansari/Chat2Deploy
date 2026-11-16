@@ -115,7 +115,7 @@ const GUIDES: Guide[] = [
       },
       {
         title: "Step 2: Triggering Cloudflare Pages Edge Deployment",
-        details: "When clicking Deploy, Chat2Deploy automatically packages your project files and pushes them to Cloudflare Pages. The deployment status changes from 'Queued' to 'Deploying' to 'Success' in real time.",
+        details: "When clicking Deploy, Ansar AI  automatically packages your project files and pushes them to Cloudflare Pages. The deployment status changes from 'Queued' to 'Deploying' to 'Success' in real time.",
       },
       {
         title: "Step 3: Accessing Your Canonical URL",
@@ -193,11 +193,10 @@ export default function GuidesPage() {
               <button
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id)}
-                className={`px-3.5 py-1.5 text-xs font-medium rounded-full transition-colors whitespace-nowrap ${
-                  activeCategory === cat.id
+                className={`px-3.5 py-1.5 text-xs font-medium rounded-full transition-colors whitespace-nowrap ${activeCategory === cat.id
                     ? "bg-primary text-white"
                     : "bg-card border border-subtle text-secondary hover:text-foreground hover:border-primary/30"
-                }`}
+                  }`}
               >
                 {cat.label}
               </button>
@@ -212,11 +211,10 @@ export default function GuidesPage() {
               return (
                 <div
                   key={guide.id}
-                  className={`bg-card border rounded-2xl transition-all ${
-                    isExpanded
+                  className={`bg-card border rounded-2xl transition-all ${isExpanded
                       ? "border-primary/40 shadow-sm"
                       : "border-subtle hover:border-primary/20"
-                  }`}
+                    }`}
                 >
                   {/* Guide Header Banner */}
                   <div
@@ -247,9 +245,8 @@ export default function GuidesPage() {
                     >
                       <ChevronRight
                         size={16}
-                        className={`transition-transform duration-200 ${
-                          isExpanded ? "rotate-90 text-primary" : ""
-                        }`}
+                        className={`transition-transform duration-200 ${isExpanded ? "rotate-90 text-primary" : ""
+                          }`}
                       />
                     </button>
                   </div>

@@ -32,7 +32,7 @@ const productLinks = [
 const companyLinks = [
   { label: "About", href: "/about" },
   { label: "Careers", href: "/careers" },
-  { label: "Support Us", href: "/support" },
+  // { label: "Support Us", href: "/support" },
   { label: "Contact", href: "/contact" },
 ];
 
@@ -75,7 +75,7 @@ export default function Footer() {
                 </svg>
               </div>
               <span className="text-base font-bold text-foreground group-hover:text-primary transition-colors">
-                Chat2Deploy
+                Ansar AI
               </span>
             </Link>
             <p className="text-xs leading-relaxed max-w-[200px]">
@@ -144,7 +144,7 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="border-t border-subtle pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-xs text-muted">
-            © 2026 Chat2Deploy. All rights reserved.
+            © 2026 Ansar AI . All rights reserved.
           </p>
           <div className="flex items-center gap-4">
             <a

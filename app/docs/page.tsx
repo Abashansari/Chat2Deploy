@@ -77,7 +77,7 @@ Include:
                 Documentation & Platform Reference
               </h1>
               <p className="text-muted text-base mt-2 max-w-2xl">
-                Comprehensive guide to prompt engineering, AI code generation, automatic versioning, and global edge deployments in Chat2Deploy.
+                Comprehensive guide to prompt engineering, AI code generation, automatic versioning, and global edge deployments in Ansar AI .
               </p>
             </div>
             <div className="hidden lg:flex items-center gap-3">
@@ -142,7 +142,7 @@ Include:
                   </h2>
                 </div>
                 <p className="text-sm text-muted leading-relaxed">
-                  Chat2Deploy is an AI-powered website development and deployment platform. Instead of managing complex build configurations, bundling setups, or cloud provisioning, you describe your vision in conversational English. Chat2Deploy turns your prompt into a full, production-ready website with clean HTML, modern CSS, and reactive JavaScript.
+                  Ansar AI  is an AI-powered website development and deployment platform. Instead of managing complex build configurations, bundling setups, or cloud provisioning, you describe your vision in conversational English. Ansar AI  turns your prompt into a full, production-ready website with clean HTML, modern CSS, and reactive JavaScript.
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
@@ -248,7 +248,7 @@ Include:
                   </h2>
                 </div>
                 <p className="text-sm text-muted leading-relaxed">
-                  Every time you generate or modify a website, Chat2Deploy creates an immutable snapshot of all project files. You are never locked into an AI generation that broke your layout.
+                  Every time you generate or modify a website, Ansar AI  creates an immutable snapshot of all project files. You are never locked into an AI generation that broke your layout.
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -328,7 +328,7 @@ Include:
                   </h2>
                 </div>
                 <p className="text-sm text-muted leading-relaxed">
-                  Chat2Deploy is built with a resilient multi-tier cloud architecture designed to eliminate single points of failure:
+                  Ansar AI  is built with a resilient multi-tier cloud architecture designed to eliminate single points of failure:
                 </p>
 
                 <div className="bg-card border border-subtle rounded-xl p-5 space-y-3 text-xs text-muted">

@@ -46,7 +46,7 @@ export default function FeaturesPage() {
               Everything you need to build and launch
             </h1>
             <p className="text-muted text-lg">
-              Chat2Deploy gives you an AI agent that builds, modifies, and hosts your website.
+              Ansar AI  gives you an AI agent that builds, modifies, and hosts your website.
             </p>
           </div>
 

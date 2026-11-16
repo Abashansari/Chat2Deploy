@@ -9,7 +9,7 @@
  * Environment variables:
  *   RESEND_API_KEY — API key from https://resend.com/api-keys
  *   CAREERS_ADMIN_EMAIL — Authorized admin email address
- *   CAREERS_FROM_EMAIL — Sender address (defaults to: "Chat2Deploy Careers <onboarding@resend.dev>")
+ *   CAREERS_FROM_EMAIL — Sender address (defaults to: "Ansar AI  Careers <onboarding@resend.dev>")
  */
 
 export interface CareerApplicationData {
@@ -56,10 +56,10 @@ function escapeHtml(text: string): string {
  * Returns default subject and body for selection emails.
  */
 export function getDefaultSelectionEmail(applicantName: string, appliedPosition: string = "Learner Contributor") {
-  const subject = `Congratulations ${applicantName}! You have been selected for the Chat2Deploy ${appliedPosition} Program`;
+  const subject = `Congratulations ${applicantName}! You have been selected for the Ansar AI  ${appliedPosition} Program`;
   const body = `Dear ${applicantName},
 
-We are delighted to inform you that your application for the Chat2Deploy ${appliedPosition} Program has been accepted!
+We are delighted to inform you that your application for the Ansar AI  ${appliedPosition} Program has been accepted!
 
 Our review team was genuinely impressed by your background, your demonstrated interest in software engineering, and your motivation to contribute to real-world products.
 
@@ -75,7 +75,7 @@ Congratulations once again, and welcome to the team!
 
 Warm regards,
 Careers & Contributor Programs
-Chat2Deploy Team`;
+Ansar AI  Team`;
 
   return { subject, body };
 }
@@ -102,7 +102,7 @@ function buildAdminNotificationHtml(app: CareerApplicationData, dashboardUrl: st
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>New Application — Chat2Deploy Careers</title>
+  <title>New Application — Ansar AI  Careers</title>
 </head>
 <body style="margin:0;padding:0;background-color:#09090b;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#f4f4f5;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#09090b;padding:32px 16px;">
@@ -116,7 +116,7 @@ function buildAdminNotificationHtml(app: CareerApplicationData, dashboardUrl: st
                 <tr>
                   <td>
                     <span style="display:inline-block;background-color:#0284c7;color:#ffffff;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;padding:3px 8px;border-radius:4px;margin-bottom:8px;">New Application</span>
-                    <h1 style="margin:4px 0 0;font-size:20px;font-weight:700;color:#f4f4f5;">Chat2Deploy Contributor Program</h1>
+                    <h1 style="margin:4px 0 0;font-size:20px;font-weight:700;color:#f4f4f5;">Ansar AI  Contributor Program</h1>
                     <div style="margin-top:4px;font-size:13px;color:#38bdf8;font-weight:500;">Role: ${escapeHtml(position)}</div>
                   </td>
                   <td align="right" style="vertical-align:top;">
@@ -246,7 +246,7 @@ function buildAdminNotificationHtml(app: CareerApplicationData, dashboardUrl: st
 }
 
 function buildAdminNotificationPlainText(app: CareerApplicationData, dashboardUrl: string): string {
-  return `=== NEW CHAT2DEPLOY CAREER APPLICATION ===
+  return `=== NEW Ansar AI  CAREER APPLICATION ===
 
 Applied Position: ${app.appliedPosition || "Learner Contributor"}
 Applicant: ${app.fullName}
@@ -284,7 +284,7 @@ function buildConfirmationHtml(applicantName: string): string {
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Application Received — Chat2Deploy</title>
+  <title>Application Received — Ansar AI </title>
 </head>
 <body style="margin:0;padding:0;background-color:#0c0c0c;font-family:'Segoe UI',Arial,Helvetica,sans-serif;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#0c0c0c;padding:32px 16px;">
@@ -300,7 +300,7 @@ function buildConfirmationHtml(applicantName: string): string {
                     <div style="width:36px;height:36px;background-color:#0284c7;border-radius:50%;display:inline-block;vertical-align:middle;text-align:center;line-height:36px;margin-right:10px;">
                       <span style="color:#ffffff;font-size:14px;font-weight:bold;">C2D</span>
                     </div>
-                    <span style="font-size:20px;font-weight:700;color:#e5e5e5;vertical-align:middle;">Chat2Deploy Careers</span>
+                    <span style="font-size:20px;font-weight:700;color:#e5e5e5;vertical-align:middle;">Ansar AI  Careers</span>
                   </td>
                 </tr>
               </table>
@@ -317,7 +317,7 @@ function buildConfirmationHtml(applicantName: string): string {
                 Hi ${escapeHtml(applicantName)},
               </p>
               <p style="margin:0 0 16px;font-size:15px;color:#d1d5db;line-height:1.6;">
-                Thank you for applying to the <strong style="color:#e5e5e5;">Chat2Deploy Learner Contributor Program</strong>.
+                Thank you for applying to the <strong style="color:#e5e5e5;">Ansar AI  Learner Contributor Program</strong>.
               </p>
               <p style="margin:0 0 16px;font-size:15px;color:#d1d5db;line-height:1.6;">
                 We have successfully received your application. Our administrative team will review your profile, skills, and statement of motivation. If shortlisted or selected, you will receive an official notification from us with next steps.
@@ -333,7 +333,7 @@ function buildConfirmationHtml(applicantName: string): string {
               </table>
               <p style="margin:24px 0 0;font-size:15px;color:#d1d5db;line-height:1.6;">
                 Best regards,<br>
-                <strong style="color:#e5e5e5;">Chat2Deploy Team</strong>
+                <strong style="color:#e5e5e5;">Ansar AI  Team</strong>
               </p>
             </td>
           </tr>
@@ -342,7 +342,7 @@ function buildConfirmationHtml(applicantName: string): string {
           <tr>
             <td style="background-color:#0c0c0c;padding:20px 32px;border-top:1px solid #222222;">
               <p style="margin:0;font-size:11px;color:#6b7280;line-height:1.5;text-align:center;">
-                © ${year} Chat2Deploy. This email was sent because you applied to the Learner Contributor Program.
+                © ${year} Ansar AI . This email was sent because you applied to the Learner Contributor Program.
               </p>
             </td>
           </tr>
@@ -357,14 +357,14 @@ function buildConfirmationHtml(applicantName: string): string {
 function buildConfirmationPlainText(applicantName: string): string {
   return `Hi ${applicantName},
 
-Thank you for applying to the Chat2Deploy Learner Contributor Program.
+Thank you for applying to the Ansar AI  Learner Contributor Program.
 
 We have successfully received your application. Our team will review the information you submitted and contact you if you are shortlisted or selected for the next stage.
 
 This is an unpaid learning and contribution opportunity; no stipend is provided. A certificate may be awarded after successful completion of the program and fulfillment of its requirements.
 
 Best regards,
-Chat2Deploy Team`;
+Ansar AI  Team`;
 }
 
 /**
@@ -384,7 +384,7 @@ function buildSelectionHtml(applicantName: string, appliedPosition: string, cont
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Official Selection — Chat2Deploy Careers</title>
+  <title>Official Selection — Ansar AI  Careers</title>
 </head>
 <body style="margin:0;padding:0;background-color:#0a0a0c;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#f4f4f5;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#0a0a0c;padding:32px 16px;">
@@ -398,7 +398,7 @@ function buildSelectionHtml(applicantName: string, appliedPosition: string, cont
                 <tr>
                   <td>
                     <span style="display:inline-block;background-color:#14b8a6;color:#042f2e;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;padding:4px 10px;border-radius:4px;margin-bottom:10px;">Official Selection</span>
-                    <h1 style="margin:0;font-size:22px;font-weight:700;color:#f0fdfa;">Welcome to Chat2Deploy</h1>
+                    <h1 style="margin:0;font-size:22px;font-weight:700;color:#f0fdfa;">Welcome to Ansar AI </h1>
                     <div style="margin-top:6px;font-size:13px;color:#5eead4;">Role: ${escapeHtml(appliedPosition)}</div>
                   </td>
                   <td align="right" style="vertical-align:top;">
@@ -433,10 +433,10 @@ function buildSelectionHtml(applicantName: string, appliedPosition: string, cont
           <tr>
             <td style="background-color:#09090b;padding:24px 32px;border-top:1px solid #27272a;">
               <p style="margin:0 0 6px;font-size:12px;color:#a1a1aa;text-align:center;">
-                Chat2Deploy Contributor Programs • Empowering the next generation of builders
+                Ansar AI  Contributor Programs • Empowering the next generation of builders
               </p>
               <p style="margin:0;font-size:11px;color:#71717a;text-align:center;">
-                © ${year} Chat2Deploy. All rights reserved.
+                © ${year} Ansar AI . All rights reserved.
               </p>
             </td>
           </tr>
@@ -471,7 +471,7 @@ export async function sendCareerAdminNotificationEmail(
   if (!apiKey) {
     console.log(`\n============================================================`);
     console.log(`[CAREERS NOTIFICATION EMAIL] TO: ${adminEmail}`);
-    console.log(`SUBJECT: [Chat2Deploy Careers] New Application: ${app.fullName} (${app.appliedPosition || "Learner Contributor"})`);
+    console.log(`SUBJECT: [Ansar AI  Careers] New Application: ${app.fullName} (${app.appliedPosition || "Learner Contributor"})`);
     console.log(`DASHBOARD URL: ${dashboardUrl}`);
     console.log(`------------------------------------------------------------`);
     console.log(buildAdminNotificationPlainText(app, dashboardUrl));
@@ -479,14 +479,14 @@ export async function sendCareerAdminNotificationEmail(
     return;
   }
 
-  const fromAddress = process.env.CAREERS_FROM_EMAIL || "Chat2Deploy Careers <onboarding@resend.dev>";
+  const fromAddress = process.env.CAREERS_FROM_EMAIL || "Ansar AI  Careers <onboarding@resend.dev>";
   const position = app.appliedPosition || "Learner Contributor";
 
   const payload = {
     from: fromAddress,
     to: [adminEmail],
     reply_to: app.email,
-    subject: `[Chat2Deploy Careers] New Application: ${app.fullName} (${position})`,
+    subject: `[Ansar AI  Careers] New Application: ${app.fullName} (${position})`,
     html: buildAdminNotificationHtml(app, dashboardUrl),
     text: buildAdminNotificationPlainText(app, dashboardUrl),
   };
@@ -516,12 +516,12 @@ export async function sendCareerConfirmationEmail(options: ConfirmationEmailOpti
     return;
   }
 
-  const fromAddress = process.env.CAREERS_FROM_EMAIL || "Chat2Deploy Careers <onboarding@resend.dev>";
+  const fromAddress = process.env.CAREERS_FROM_EMAIL || "Ansar AI  Careers <onboarding@resend.dev>";
 
   const payload = {
     from: fromAddress,
     to: [options.to],
-    subject: "We Have Received Your Application — Chat2Deploy Careers",
+    subject: "We Have Received Your Application — Ansar AI  Careers",
     html: buildConfirmationHtml(options.applicantName),
     text: buildConfirmationPlainText(options.applicantName),
   };
@@ -571,7 +571,7 @@ export async function sendLearnerSelectionEmail(options: SelectionEmailOptions):
     return { id: "dev-simulated-id" };
   }
 
-  const fromAddress = process.env.CAREERS_FROM_EMAIL || "Chat2Deploy Careers <onboarding@resend.dev>";
+  const fromAddress = process.env.CAREERS_FROM_EMAIL || "Ansar AI  Careers <onboarding@resend.dev>";
 
   const payload = {
     from: fromAddress,

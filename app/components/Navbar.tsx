@@ -32,12 +32,12 @@ export default function Navbar() {
                 <rect x="6" y="9" width="4" height="5" rx="0.5" fill="white" />
               </svg>
             </div>
-            <span className="text-lg font-bold text-foreground">MultiFlex</span>
+            <span className="text-lg font-bold text-foreground">Ansar AI </span>
           </Link>
 
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-8">
-                        <Link
+            <Link
               href="/about"
               className="text-sm text-secondary hover:text-foreground transition-colors"
             >

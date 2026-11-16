@@ -191,7 +191,7 @@ export default function DashboardPage() {
             }
           }
         })
-        .catch(() => {});
+        .catch(() => { });
 
       hasLoadedOnceRef.current = true;
     } catch (err) {
@@ -428,7 +428,7 @@ export default function DashboardPage() {
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const disposition = res.headers.get("Content-Disposition");
-      let filename = "Chat2Deploy-report.pdf";
+      let filename = "Ansar AI -report.pdf";
       if (disposition) {
         const match = disposition.match(/filename="?([^"]+)"?/);
         if (match?.[1]) filename = match[1];
@@ -461,8 +461,8 @@ export default function DashboardPage() {
         projectStatusFilter === "all"
           ? true
           : projectStatusFilter === "published"
-          ? isPublished
-          : !isPublished;
+            ? isPublished
+            : !isPublished;
 
       return matchesSearch && matchesStatus;
     });
@@ -528,9 +528,8 @@ export default function DashboardPage() {
 
       {/* Sidebar */}
       <aside
-        className={`fixed md:static inset-y-0 left-0 z-50 w-64 bg-background border-r border-subtle flex flex-col transition-transform duration-300 ease-in-out ${
-          isMobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
-        }`}
+        className={`fixed md:static inset-y-0 left-0 z-50 w-64 bg-background border-r border-subtle flex flex-col transition-transform duration-300 ease-in-out ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+          }`}
       >
         {/* Logo */}
         <div className="h-16 flex items-center px-6 border-b border-subtle shrink-0">
@@ -541,7 +540,7 @@ export default function DashboardPage() {
                 <rect x="6" y="9" width="4" height="5" rx="0.5" fill="white" />
               </svg>
             </div>
-            <span className="text-lg font-bold text-foreground">Chat2Deploy</span>
+            <span className="text-lg font-bold text-foreground">Ansar AI </span>
           </Link>
           <button
             className="ml-auto md:hidden text-muted hover:text-foreground"
@@ -578,11 +577,10 @@ export default function DashboardPage() {
                   if (item.id) setActiveTab(item.id);
                   setIsMobileMenuOpen(false);
                 }}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  activeTab === item.id
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === item.id
                     ? "bg-primary/10 text-primary"
                     : "text-secondary hover:bg-surface hover:text-foreground"
-                }`}
+                  }`}
               >
                 <div className="flex items-center gap-3">
                   <item.icon size={18} />
@@ -871,9 +869,8 @@ export default function DashboardPage() {
                           <div key={p.id} className="bg-card border border-subtle rounded-xl p-4 flex flex-col justify-between hover:shadow-xs transition-shadow">
                             <div>
                               <div className="flex items-center justify-between mb-2">
-                                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                                  isDeployed ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" : "bg-surface text-muted border border-subtle"
-                                }`}>
+                                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${isDeployed ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" : "bg-surface text-muted border border-subtle"
+                                  }`}>
                                   {isDeployed ? "Published" : "Draft"}
                                 </span>
                                 <span
@@ -943,25 +940,22 @@ export default function DashboardPage() {
                     <div className="flex items-center gap-1 border border-subtle rounded-lg p-1 bg-surface text-xs">
                       <button
                         onClick={() => setProjectStatusFilter("all")}
-                        className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
-                          projectStatusFilter === "all" ? "bg-background text-primary shadow-xs" : "text-muted hover:text-foreground"
-                        }`}
+                        className={`px-2.5 py-1 rounded-md font-medium transition-colors ${projectStatusFilter === "all" ? "bg-background text-primary shadow-xs" : "text-muted hover:text-foreground"
+                          }`}
                       >
                         All ({projects.length})
                       </button>
                       <button
                         onClick={() => setProjectStatusFilter("published")}
-                        className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
-                          projectStatusFilter === "published" ? "bg-background text-primary shadow-xs" : "text-muted hover:text-foreground"
-                        }`}
+                        className={`px-2.5 py-1 rounded-md font-medium transition-colors ${projectStatusFilter === "published" ? "bg-background text-primary shadow-xs" : "text-muted hover:text-foreground"
+                          }`}
                       >
                         Published
                       </button>
                       <button
                         onClick={() => setProjectStatusFilter("draft")}
-                        className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
-                          projectStatusFilter === "draft" ? "bg-background text-primary shadow-xs" : "text-muted hover:text-foreground"
-                        }`}
+                        className={`px-2.5 py-1 rounded-md font-medium transition-colors ${projectStatusFilter === "draft" ? "bg-background text-primary shadow-xs" : "text-muted hover:text-foreground"
+                          }`}
                       >
                         Drafts
                       </button>
@@ -991,9 +985,8 @@ export default function DashboardPage() {
                             {/* Card Header */}
                             <div className="flex items-start justify-between gap-2 mb-3">
                               <div className="flex items-center gap-2">
-                                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                                  isDeployed ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" : "bg-surface text-muted border border-subtle"
-                                }`}>
+                                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${isDeployed ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" : "bg-surface text-muted border border-subtle"
+                                  }`}>
                                   {isDeployed ? "Published" : "Draft"}
                                 </span>
                                 <span className="text-[11px] font-mono text-muted">
@@ -1085,9 +1078,8 @@ export default function DashboardPage() {
                             <button
                               onClick={() => handleDeployProject(p.id, p.name)}
                               disabled={isDeployingThis}
-                              className={`px-3 py-2 text-xs font-semibold rounded-md transition-colors flex items-center gap-1 text-white shadow-2xs ${
-                                isDeployed ? "bg-emerald-600 hover:bg-emerald-700" : "bg-primary hover:bg-primary-dark"
-                              }`}
+                              className={`px-3 py-2 text-xs font-semibold rounded-md transition-colors flex items-center gap-1 text-white shadow-2xs ${isDeployed ? "bg-emerald-600 hover:bg-emerald-700" : "bg-primary hover:bg-primary-dark"
+                                }`}
                               title={isDeployed ? "Re-Deploy latest version" : "Deploy website"}
                             >
                               {isDeployingThis ? (
@@ -1141,25 +1133,22 @@ export default function DashboardPage() {
                     <div className="flex items-center gap-1 border border-subtle rounded-lg p-1 bg-surface text-xs">
                       <button
                         onClick={() => setDeploymentStatusFilter("all")}
-                        className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
-                          deploymentStatusFilter === "all" ? "bg-background text-primary shadow-xs" : "text-muted hover:text-foreground"
-                        }`}
+                        className={`px-2.5 py-1 rounded-md font-medium transition-colors ${deploymentStatusFilter === "all" ? "bg-background text-primary shadow-xs" : "text-muted hover:text-foreground"
+                          }`}
                       >
                         All ({deployments.length})
                       </button>
                       <button
                         onClick={() => setDeploymentStatusFilter("success")}
-                        className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
-                          deploymentStatusFilter === "success" ? "bg-background text-primary shadow-xs" : "text-muted hover:text-foreground"
-                        }`}
+                        className={`px-2.5 py-1 rounded-md font-medium transition-colors ${deploymentStatusFilter === "success" ? "bg-background text-primary shadow-xs" : "text-muted hover:text-foreground"
+                          }`}
                       >
                         Success
                       </button>
                       <button
                         onClick={() => setDeploymentStatusFilter("failed")}
-                        className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
-                          deploymentStatusFilter === "failed" ? "bg-background text-primary shadow-xs" : "text-muted hover:text-foreground"
-                        }`}
+                        className={`px-2.5 py-1 rounded-md font-medium transition-colors ${deploymentStatusFilter === "failed" ? "bg-background text-primary shadow-xs" : "text-muted hover:text-foreground"
+                          }`}
                       >
                         Failed
                       </button>
@@ -1354,8 +1343,8 @@ export default function DashboardPage() {
                     <p className="text-3xl font-bold text-emerald-500">
                       {deployments.length > 0
                         ? `${Math.round(
-                            (deployments.filter((d) => d.status === "success").length / deployments.length) * 100
-                          )}%`
+                          (deployments.filter((d) => d.status === "success").length / deployments.length) * 100
+                        )}%`
                         : "N/A"}
                     </p>
                     <p className="text-[11px] text-muted mt-1">
