@@ -11,6 +11,9 @@ function loadApiKeyPool(): ApiKeyEntry[] {
     { name: "PRIMARY", envVar: "GOOGLE_GENERATIVE_AI_API_KEY" },
     { name: "BACKUP1", envVar: "GOOGLE_GENERATIVE_AI_BACKUP1_API_KEY" },
     { name: "BACKUP2", envVar: "GOOGLE_GENERATIVE_AI_BACKUP2_API_KEY" },
+    { name: "BACKUP3", envVar: "GOOGLE_GENERATIVE_AI_BACKUP3_API_KEY" },
+    { name: "BACKUP4", envVar: "GOOGLE_GENERATIVE_AI_BACKUP4_API_KEY" },
+    { name: "BACKUP5", envVar: "GOOGLE_GENERATIVE_AI_BACKUP5_API_KEY" },
   ];
 
   const pool: ApiKeyEntry[] = [];
