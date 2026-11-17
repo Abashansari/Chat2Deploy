@@ -12,9 +12,9 @@ export const metadata: Metadata = {
   description:
     "The easiest way to build and host websites. Start with building the website and deploy with AI-powered workflows.",
   icons: {
-    icon: "/logo.svg",
-    shortcut: "/logo.svg",
-    apple: "/logo.svg",
+    icon: "/logo.png",
+    shortcut: "/logo.png",
+    apple: "/logo.png",
   },
 };
 
